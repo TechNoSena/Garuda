@@ -550,31 +550,35 @@ flowchart LR
 
 ## 📱 User Portals & Flutter Application
 
-### 3 Distinct User Modes
+### 4 Distinct User Roles
 
 #### **1. Supplier Portal**
-- Real-time shipment tracking
-- Predicted ETAs with confidence intervals (e.g., "95% confidence it arrives 3:45-4:15 PM")
-- Historical SLA performance dashboard
-- Cost analytics: fuel savings, penalty avoidance, efficiency gains
-- Batch shipment monitoring across fleet
+- Create shipments with origin, destination, and transport mode
+- Real-time shipment tracking via live ETA endpoint
+- Compare transport modes (Cost / ETA / CO₂) before dispatching
+- View all shipments via `GET /v1/shipments/user/{uid}?role=SUPPLIER`
+- AI-powered risk analysis before dispatch
 
-#### **2. Logistics Partner / Driver Portal**
+#### **2. Logistics Partner Portal**
+- View all pending shipments and assign delivery personnel
+- Multi-modal route comparison (Road, Rail, Air, Sea)
+- Fleet-level cost and carbon analytics
+- TSP optimization for multi-stop delivery planning
+
+#### **3. Delivery Man Portal**
+- Optimized delivery sequence via Traveling Salesman Problem solver
 - Real-time navigation with predictive rerouting alerts
-- Turn-by-turn directions with context (e.g., "Turn left in 2km to avoid accident ahead")
-- Daily delivery target dashboard
-- Fuel efficiency tracking & incentive earning
-- Historical route performance (preferred routes by region, time)
+- Background GPS pinging every 5-10 minutes
+- Live ride monitoring with automatic reroute suggestions
 
-#### **3. Customer Portal**
+#### **4. Consumer Portal**
 - Live shipment tracking with animated map
 - Accurate ETA with reason for changes (e.g., "Rerouted to avoid traffic, new ETA: 6:30 PM")
-- Estimated delivery time window (narrow, thanks to Garuda)
-- Proactive notifications: "Your package is on the way and on schedule"
+- Full status lifecycle: `PENDING → ASSIGNED → DISPATCHED → IN_TRANSIT → OUT_FOR_DELIVERY → DELIVERED`
 - Transparent communication builds trust
 
 ### Architecture Benefits of Flutter
-- **Single Codebase:** 3 portals, 1 app framework → 70% faster iteration
+- **Single Codebase:** 4 portals, 1 app framework → 70% faster iteration
 - **Cross-Platform:** iOS, Android, Web support without duplicate development
 - **Real-time Sync:** WebSocket connections push route changes to all portals instantly
 - **Offline Capability:** GPS data cached locally for navigation even without internet
@@ -697,9 +701,11 @@ pip install -r requirements.txt
 
 #### Step 3: Start FastAPI Server
 ```bash
+cd backend-fastapi
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 *Server will be available at `http://localhost:8000`*
+*Premium API docs at `http://localhost:8000/scalar`*
 
 #### Step 4: Flutter App Setup
 ```bash
@@ -710,27 +716,24 @@ flutter run  # Run on connected device or emulator
 
 #### Step 5: Verify Integration
 ```bash
-# Test the API (Start a Session)
-curl -X POST http://localhost:8000/v1/session/start \
-  -H "Content-Type: application/json"
+# Health Check
+curl http://localhost:8000/v1/health
 
-# Test fetching routes
-curl -X POST http://localhost:8000/v1/routes/fetch \
+# Start a Session
+curl -X POST http://localhost:8000/v1/session/start
+
+# Compare all transport modes
+curl -X POST http://localhost:8000/v1/routes/compare-modes \
   -H "Content-Type: application/json" \
   -d '{
     "session_id": "your_session_id_here",
     "origin": {"lat": 22.543610, "lng": 85.796856},
-    "destination": {"lat": 22.768116, "lng": 86.200684},
-    "mode": "ROAD_CAR"
+    "destination": {"lat": 22.768116, "lng": 86.200684}
   }'
 ```
 
-### Configuration
-See `config/default.yaml` for:
-- Risk score thresholds
-- API rate limits
-- Notification preferences
-- Historical data query windows
+### Backend API Endpoints (20+ endpoints)
+For the full API reference, see [FLUTTER_README.md](backend-fastapi/FLUTTER_README.md) or visit the interactive Scalar docs at `/scalar`.
 
 ---
 
