@@ -43,11 +43,15 @@ try:
         key_path = os.path.join(os.path.dirname(__file__), "..", "serviceAccountKey.json")
 
     if os.path.exists(key_path):
+        # Local development — use the JSON key file
         cred = credentials.Certificate(key_path)
         firebase_admin.initialize_app(cred)
         db = firestore.client()
-        print("Firebase Admin SDK initialized successfully.")
+        print("Firebase Admin SDK initialized with key file.")
     else:
-        print(f"Warning: Firebase {key_path} not found. Running in mock/offline DB mode.")
+        # Cloud Run / GCP — use Application Default Credentials (no file needed)
+        firebase_admin.initialize_app()
+        db = firestore.client()
+        print("Firebase Admin SDK initialized with default credentials (Cloud Run).")
 except Exception as e:
     print(f"Warning: Firebase initialization failed. {e}")
