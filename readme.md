@@ -64,8 +64,10 @@ Project Garuda is built to orchestrate and protect shipments across **all medium
 Garuda employs an **Agentic RAG** architecture orchestrated via FastAPI, serving a unified Flutter application suite.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#4285F4", "primaryTextColor": "#FFFFFF", "primaryBorderColor": "#1A73E8", "lineColor": "#5F6368", "secondaryColor": "#34A853", "tertiaryColor": "#FBBC05", "fontFamily": "Roboto"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
 graph TD
+    classDef default fill:#1E293B,stroke:#334155,stroke-width:1px,color:#F8FAFC;
+
     subgraph Frontend Client Layer
         A[📱 Flutter Multi-Portal App<br>iOS / Android / Web]
     end
@@ -89,21 +91,23 @@ graph TD
     C <-->|Live News & Weather| F
     C <-->|Historical Delay Patterns| G
 
-    style A fill:#4285F4,stroke:#1A73E8,stroke-width:2px,color:#FFF
-    style B fill:#34A853,stroke:#0D652D,stroke-width:2px,color:#FFF
-    style C fill:#FBBC05,stroke:#E37400,stroke-width:2px,color:#000
-    style D fill:#EA4335,stroke:#B31412,stroke-width:2px,color:#FFF
-    style E fill:#EA4335,stroke:#B31412,stroke-width:2px,color:#FFF
-    style F fill:#EA4335,stroke:#B31412,stroke-width:2px,color:#FFF
-    style G fill:#EA4335,stroke:#B31412,stroke-width:2px,color:#FFF
+    style A fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    style B fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
+    style C fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
+    style D fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    style E fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    style F fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    style G fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
 ```
 
 ### 2. Intelligent Process Flow
 How Garuda continuously analyzes data to preemptively detect disruptions before they escalate.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#FBBC05", "primaryTextColor": "#000", "primaryBorderColor": "#E37400", "lineColor": "#5F6368"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
 flowchart TD
+    classDef default fill:#1E293B,stroke:#334155,stroke-width:1px,color:#F8FAFC;
+
     1([Start: Shipment Dispatched]) --> 2[Extract Route Waypoints via Routes API]
     2 --> 3[Continuous Live Monitoring Cycle]
     
@@ -125,30 +129,34 @@ flowchart TD
     12 --> 13[Push AI-Explained Notification to Stakeholders]
     13 --> 14([End: Cascade Prevented])
 
-    style 1 fill:#34A853,color:#FFF
-    style 14 fill:#4285F4,color:#FFF
-    style 10 fill:#EA4335,color:#FFF
+    style 1 fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
+    style 14 fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    style 10 fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
 ```
 
 ### 3. Multi-Actor Use Cases
 The system is built for the entire logistics ecosystem.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#4285F4", "primaryTextColor": "#FFF", "lineColor": "#5F6368"}}}%%
-usecaseDiagram
-    actor Supplier as "🏭 Supplier"
-    actor Logistics as "🏢 Logistics Partner"
-    actor Driver as "🚚 Driver"
-    actor Consumer as "👤 Consumer"
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
+flowchart LR
+    classDef default fill:#1E293B,stroke:#334155,stroke-width:1px,color:#F8FAFC;
 
-    package "Project Garuda System" {
-        usecase UC1 as "Create Shipment"
-        usecase UC2 as "Compare Transport Modes"
-        usecase UC3 as "Assign Fleet & Driver"
-        usecase UC4 as "Receive Preemptive Reroutes"
-        usecase UC5 as "Log Exceptions/Incidents"
-        usecase UC6 as "Live ETA & Reason Tracking"
-    }
+    subgraph Actors
+        Supplier(((🏭 Supplier)))
+        Logistics(((🏢 Logistics Partner)))
+        Driver(((🚚 Driver)))
+        Consumer(((👤 Consumer)))
+    end
+
+    subgraph "Project Garuda System"
+        UC1([Create Shipment])
+        UC2([Compare Transport Modes])
+        UC3([Assign Fleet & Driver])
+        UC4([Receive Preemptive Reroutes])
+        UC5([Log Exceptions/Incidents])
+        UC6([Live ETA & Reason Tracking])
+    end
 
     Supplier --> UC1
     Supplier --> UC2
@@ -158,17 +166,17 @@ usecaseDiagram
     Driver --> UC5
     Consumer --> UC6
 
-    style Supplier fill:#34A853
-    style Logistics fill:#EA4335
-    style Driver fill:#FBBC05,color:#000
-    style Consumer fill:#4285F4
+    style Supplier fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
+    style Logistics fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    style Driver fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
+    style Consumer fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
 ```
 
 ### 4. UI Wireframe & Mock Flow
 Logical layout of the Omnichannel Flutter portals.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#34A853", "primaryTextColor": "#FFF", "lineColor": "#5F6368"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569"}}}%%
 block-beta
     columns 4
     
@@ -207,11 +215,11 @@ block-beta
         C_Btn3("💬 Secure Chat")
     end
     
-    style Auth fill:#1A73E8
-    style Supplier fill:#34A853
-    style Logistics fill:#EA4335
-    style Driver fill:#FBBC05,color:#000
-    style Consumer fill:#8AB4F8,color:#000
+    style Auth fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    style Supplier fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
+    style Logistics fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    style Driver fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
+    style Consumer fill:#0F172A,stroke:#A855F7,stroke-width:2px,color:#F8FAFC
 ```
 
 ---
