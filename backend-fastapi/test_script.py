@@ -66,7 +66,7 @@ r = client.post("/v1/auth/login", json={
 })
 log("POST /v1/auth/login (bad creds — expect 401)", r.status_code == 401)
 
-r = client.post("/v1/auth/reset-password", json={"email": "test_supplier@garuda.com"})
+r = client.post("/v1/auth/reset-password", json={"email": f"supplier_{ts}@garuda.com"})
 log("POST /v1/auth/reset-password", r.status_code == 200, r.json())
 
 r = client.get("/v1/auth/profile/mock-uid")
