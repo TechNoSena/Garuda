@@ -657,12 +657,13 @@ Every reroute includes a natural language explanation:
 
 ### Prerequisites
 1. **Google Cloud Project** with billing enabled
-2. **API Keys activated for:**
+2. **Firebase Project** for Authentication and Firestore DB
+3. **API Keys activated for:**
    - Google Maps Platform (Routes API)
    - Google Cloud Programmable Search API
    - Google Gemini API (via Vertex AI)
    - BigQuery
-3. **Development Environment:**
+4. **Development Environment:**
    - Python 3.9+
    - Flutter SDK 3.0+
    - Git
@@ -685,12 +686,13 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Set up environment variables
-cp .env.example .env
-# Edit .env and add your Google Cloud credentials:
-# GOOGLE_MAPS_API_KEY=your_key_here
-# GEMINI_API_KEY=your_key_here
-# SEARCH_ENGINE_ID=your_id_here
-# BIGQUERY_PROJECT_ID=your_project_id
+# Create a .env file in the backend-fastapi directory:
+# GOOGLE_MAPS_KEY=your_key_here
+# PROJECT_ID=your_google_cloud_project_id
+# FIREBASE_WEB_API_KEY=your_firebase_web_api_key
+
+# Firebase Admin Setup
+# Place your serviceAccountKey.json downloaded from Firebase Console into the backend-fastapi folder.
 ```
 
 #### Step 3: Start FastAPI Server
@@ -708,13 +710,18 @@ flutter run  # Run on connected device or emulator
 
 #### Step 5: Verify Integration
 ```bash
-# Test the API
-curl -X POST http://localhost:8000/api/dispatch \
+# Test the API (Start a Session)
+curl -X POST http://localhost:8000/v1/session/start \
+  -H "Content-Type: application/json"
+
+# Test fetching routes
+curl -X POST http://localhost:8000/v1/routes/fetch \
   -H "Content-Type: application/json" \
   -d '{
-    "source": {"lat": 19.0897, "lng": 72.8479},
-    "destination": {"lat": 18.5204, "lng": 73.8567},
-    "vehicle_type": "truck"
+    "session_id": "your_session_id_here",
+    "origin": {"lat": 22.543610, "lng": 85.796856},
+    "destination": {"lat": 22.768116, "lng": 86.200684},
+    "mode": "ROAD_CAR"
   }'
 ```
 

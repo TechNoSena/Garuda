@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+requests
+python-dotenv
+google-cloud-aiplatform
+googlemaps
+langchain
+llama-index
+pydantic
+firebase-admin
