@@ -1,16 +1,17 @@
 """
 Garuda Backend — Full Integration Test Suite v2.0
 Tests ALL endpoints across routing, risk, notifications, analytics, admin, intelligence.
+Target: https://garuda-backend-437904093333.asia-south1.run.app
 """
 import json
 import sys
 import io
+import time
+import requests
+
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-from fastapi.testclient import TestClient
-from main import app
-
-client = TestClient(app)
+BASE = "https://garuda-backend-437904093333.asia-south1.run.app"
 PASS = "✅"
 FAIL = "❌"
 results = []
@@ -20,8 +21,9 @@ def log(name, passed, data=None):
     results.append((name, passed))
     print(f"\n{status} {name}")
     if data:
-        print(json.dumps(data, indent=2, default=str)[:400])
-        if len(json.dumps(data, default=str)) > 400:
+        txt = json.dumps(data, indent=2, default=str)
+        print(txt[:400])
+        if len(txt) > 400:
             print("  ... [truncated]")
 
 # ═══════════════════════════════════════════════════════════════
@@ -31,7 +33,7 @@ print("\n" + "="*60)
 print("  1. SYSTEM HEALTH CHECK")
 print("="*60)
 
-r = client.get("/v1/health")
+r = requests.get(f"{BASE}/v1/health")
 log("GET /v1/health", r.status_code == 200, r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -41,35 +43,34 @@ print("\n" + "="*60)
 print("  2. AUTH ENDPOINTS")
 print("="*60)
 
-import time
 ts = str(int(time.time()))[-5:]
 
-r = client.post("/v1/auth/register", json={
+r = requests.post(f"{BASE}/v1/auth/register", json={
     "email": f"supplier_{ts}@garuda.com", "password": "test123456",
     "name": "Test Supplier", "role": "SUPPLIER", "company_name": "Garuda Logistics"
 })
 log("POST /v1/auth/register (Supplier)", r.status_code == 200, r.json())
 
-r = client.post("/v1/auth/register", json={
+r = requests.post(f"{BASE}/v1/auth/register", json={
     "email": f"driver_{ts}@garuda.com", "password": "test123456",
     "name": "Rahul Kumar", "role": "DELIVERY_MAN"
 })
 log("POST /v1/auth/register (Delivery Man)", r.status_code == 200, r.json())
 
-r = client.post("/v1/auth/login", json={
+r = requests.post(f"{BASE}/v1/auth/login", json={
     "email": f"supplier_{ts}@garuda.com", "password": "test123456"
 })
 log("POST /v1/auth/login", r.status_code == 200, r.json())
 
-r = client.post("/v1/auth/login", json={
+r = requests.post(f"{BASE}/v1/auth/login", json={
     "email": "wrong@email.com", "password": "badpass"
 })
 log("POST /v1/auth/login (bad creds — expect 401)", r.status_code == 401)
 
-r = client.post("/v1/auth/reset-password", json={"email": f"supplier_{ts}@garuda.com"})
+r = requests.post(f"{BASE}/v1/auth/reset-password", json={"email": f"supplier_{ts}@garuda.com"})
 log("POST /v1/auth/reset-password", r.status_code == 200, r.json())
 
-r = client.get("/v1/auth/profile/mock-uid")
+r = requests.get(f"{BASE}/v1/auth/profile/mock-uid")
 log("GET /v1/auth/profile/{uid}", r.status_code in [200, 404], r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -79,7 +80,7 @@ print("\n" + "="*60)
 print("  3. SHIPMENT LIFECYCLE")
 print("="*60)
 
-r = client.post("/v1/shipments/", json={
+r = requests.post(f"{BASE}/v1/shipments/", json={
     "supplier_id": "mock-uid", "logistics_id": "logistics-uid",
     "consumer_email": "customer@email.com",
     "origin": {"lat": 22.543610, "lng": 85.796856},
@@ -90,30 +91,30 @@ r = client.post("/v1/shipments/", json={
 log("POST /v1/shipments/ (Create)", r.status_code == 200, r.json())
 shipment_id = r.json().get("shipment", {}).get("shipment_id", "mock-shipment-id")
 
-r = client.get(f"/v1/shipments/{shipment_id}")
+r = requests.get(f"{BASE}/v1/shipments/{shipment_id}")
 log(f"GET /v1/shipments/{{id}}", r.status_code in [200, 404], r.json())
 
-r = client.patch(f"/v1/shipments/{shipment_id}/assign", json={"delivery_man_id": "driver-uid"})
+r = requests.patch(f"{BASE}/v1/shipments/{shipment_id}/assign", json={"delivery_man_id": "driver-uid"})
 log("PATCH /assign", r.status_code in [200, 400], r.json())
 
-r = client.patch(f"/v1/shipments/{shipment_id}/status?status=DISPATCHED")
+r = requests.patch(f"{BASE}/v1/shipments/{shipment_id}/status?status=DISPATCHED")
 log("PATCH /status → DISPATCHED", r.status_code in [200, 400], r.json())
 
-r = client.patch(f"/v1/shipments/{shipment_id}/status?status=IN_TRANSIT")
+r = requests.patch(f"{BASE}/v1/shipments/{shipment_id}/status?status=IN_TRANSIT")
 log("PATCH /status → IN_TRANSIT", r.status_code in [200, 400], r.json())
 
-r = client.patch(f"/v1/shipments/{shipment_id}/location", json={
+r = requests.patch(f"{BASE}/v1/shipments/{shipment_id}/location", json={
     "current_location": {"lat": 22.650000, "lng": 85.900000}
 })
 log("PATCH /location (mid-route update)", r.status_code in [200, 400], r.json())
 
-r = client.get(f"/v1/shipments/{shipment_id}/eta")
+r = requests.get(f"{BASE}/v1/shipments/{shipment_id}/eta")
 log("GET /eta", r.status_code in [200, 404], r.json())
 
-r = client.get(f"/v1/shipments/user/mock-uid?role=SUPPLIER")
+r = requests.get(f"{BASE}/v1/shipments/user/mock-uid?role=SUPPLIER")
 log("GET /user/{id} (list by supplier)", r.status_code == 200, r.json())
 
-r = client.patch(f"/v1/shipments/{shipment_id}/status?status=DELIVERED")
+r = requests.patch(f"{BASE}/v1/shipments/{shipment_id}/status?status=DELIVERED")
 log("PATCH /status → DELIVERED", r.status_code in [200, 400], r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -123,13 +124,13 @@ print("\n" + "="*60)
 print("  4. ROUTING — ALL TRANSPORT MODES")
 print("="*60)
 
-r = client.post("/v1/session/start")
+r = requests.post(f"{BASE}/v1/session/start")
 log("POST /session/start", r.status_code == 200, r.json())
 sid = r.json()["session_id"]
 
 modes = ["ROAD_CAR", "ROAD_BIKE", "RAIL", "FLIGHT", "SHIP"]
 for mode in modes:
-    r = client.post("/v1/routes/fetch", json={
+    r = requests.post(f"{BASE}/v1/routes/fetch", json={
         "session_id": sid,
         "origin": {"lat": 22.543610, "lng": 85.796856},
         "destination": {"lat": 22.768116, "lng": 86.200684},
@@ -145,7 +146,7 @@ print("  5. MULTI-STOP TSP OPTIMIZATION")
 print("="*60)
 
 for mode in ["ROAD_CAR", "RAIL"]:
-    r = client.post("/v1/routes/optimize-multi", json={
+    r = requests.post(f"{BASE}/v1/routes/optimize-multi", json={
         "session_id": sid,
         "points": [
             {"lat": 22.543610, "lng": 85.796856},
@@ -164,7 +165,7 @@ print("\n" + "="*60)
 print("  6. COMPARE ALL MODES (Cost / ETA / CO₂)")
 print("="*60)
 
-r = client.post("/v1/routes/compare-modes", json={
+r = requests.post(f"{BASE}/v1/routes/compare-modes", json={
     "session_id": sid,
     "origin": {"lat": 22.543610, "lng": 85.796856},
     "destination": {"lat": 22.768116, "lng": 86.200684}
@@ -178,7 +179,7 @@ print("\n" + "="*60)
 print("  7. AI RISK ANALYSIS")
 print("="*60)
 
-r = client.post("/v1/routes/analyze", json={
+r = requests.post(f"{BASE}/v1/routes/analyze", json={
     "session_id": sid,
     "origin": {"lat": 22.543610, "lng": 85.796856},
     "destination": {"lat": 22.768116, "lng": 86.200684},
@@ -194,7 +195,7 @@ print("\n" + "="*60)
 print("  8. LIVE RIDE MONITORING")
 print("="*60)
 
-r = client.post("/v1/ride/monitor", json={
+r = requests.post(f"{BASE}/v1/ride/monitor", json={
     "session_id": sid,
     "current_location": {"lat": 22.650000, "lng": 85.900000},
     "destination": {"lat": 22.768116, "lng": 86.200684},
@@ -209,7 +210,7 @@ print("\n" + "="*60)
 print("  9. EDGE CASES & VALIDATION")
 print("="*60)
 
-r = client.post("/v1/routes/fetch", json={
+r = requests.post(f"{BASE}/v1/routes/fetch", json={
     "session_id": "invalid-session-id",
     "origin": {"lat": 22.5, "lng": 85.8},
     "destination": {"lat": 22.7, "lng": 86.2},
@@ -217,7 +218,7 @@ r = client.post("/v1/routes/fetch", json={
 })
 log("Invalid session → 401", r.status_code == 401)
 
-r = client.post("/v1/routes/fetch", json={
+r = requests.post(f"{BASE}/v1/routes/fetch", json={
     "session_id": sid,
     "origin": {"lat": 200, "lng": 85.8},
     "destination": {"lat": 22.7, "lng": 86.2},
@@ -225,12 +226,12 @@ r = client.post("/v1/routes/fetch", json={
 })
 log("Invalid lat (200) → 422", r.status_code == 422)
 
-r = client.post("/v1/routes/optimize-multi", json={
+r = requests.post(f"{BASE}/v1/routes/optimize-multi", json={
     "session_id": sid, "points": [{"lat": 22.5, "lng": 85.8}], "mode": "ROAD_CAR"
 })
 log("TSP with 1 point → 400", r.status_code == 400)
 
-r = client.get("/v1/shipments/nonexistent-id-12345")
+r = requests.get(f"{BASE}/v1/shipments/nonexistent-id-12345")
 log("GET nonexistent shipment → 404", r.status_code == 404)
 
 # ═══════════════════════════════════════════════════════════════
@@ -240,7 +241,7 @@ print("\n" + "="*60)
 print("  10. REROUTE, PRECHECK & MODE SWITCH")
 print("="*60)
 
-r = client.post("/v1/routes/reroute", json={
+r = requests.post(f"{BASE}/v1/routes/reroute", json={
     "session_id": sid,
     "origin": {"lat": 22.543610, "lng": 85.796856},
     "destination": {"lat": 22.768116, "lng": 86.200684},
@@ -250,7 +251,7 @@ r = client.post("/v1/routes/reroute", json={
 })
 log("POST /routes/reroute", r.status_code == 200 and r.json().get("status") == "REROUTED", r.json())
 
-r = client.post("/v1/routes/precheck", json={
+r = requests.post(f"{BASE}/v1/routes/precheck", json={
     "session_id": sid,
     "origin": {"lat": 22.543610, "lng": 85.796856},
     "destination": {"lat": 22.768116, "lng": 86.200684},
@@ -260,7 +261,7 @@ r = client.post("/v1/routes/precheck", json={
 })
 log("POST /routes/precheck", r.status_code == 200 and "dispatch_clearance" in r.json(), r.json())
 
-r = client.post("/v1/routes/switch-mode", json={
+r = requests.post(f"{BASE}/v1/routes/switch-mode", json={
     "session_id": sid,
     "origin": {"lat": 22.543610, "lng": 85.796856},
     "destination": {"lat": 22.768116, "lng": 86.200684},
@@ -277,7 +278,7 @@ print("\n" + "="*60)
 print("  11. RISK EVALUATION & DISRUPTION DETECTION")
 print("="*60)
 
-r = client.post("/v1/risk/evaluate", json={
+r = requests.post(f"{BASE}/v1/risk/evaluate", json={
     "origin": {"lat": 22.543610, "lng": 85.796856},
     "destination": {"lat": 22.768116, "lng": 86.200684},
     "mode": "ROAD_CAR",
@@ -285,7 +286,7 @@ r = client.post("/v1/risk/evaluate", json={
 })
 log("POST /risk/evaluate (fragile cargo)", r.status_code == 200 and "verdict" in r.json(), r.json())
 
-r = client.post("/v1/disruptions/detect", json={
+r = requests.post(f"{BASE}/v1/disruptions/detect", json={
     "center": {"lat": 22.650000, "lng": 85.900000},
     "radius_km": 50,
     "modes_to_check": ["ROAD_CAR", "RAIL"]
@@ -299,7 +300,7 @@ print("\n" + "="*60)
 print("  12. NOTIFICATIONS & COMMUNICATION")
 print("="*60)
 
-r = client.post("/v1/notifications/push", json={
+r = requests.post(f"{BASE}/v1/notifications/push", json={
     "user_id": "mock-uid",
     "title": "Reroute Alert",
     "body": "Your shipment has been rerouted due to an accident on NH-33",
@@ -309,10 +310,10 @@ r = client.post("/v1/notifications/push", json={
 })
 log("POST /notifications/push", r.status_code == 200 and r.json().get("status") == "sent", r.json())
 
-r = client.get("/v1/notifications/history?user_id=mock-uid&limit=10")
+r = requests.get(f"{BASE}/v1/notifications/history?user_id=mock-uid&limit=10")
 log("GET /notifications/history", r.status_code == 200 and "notifications" in r.json(), r.json())
 
-r = client.post("/v1/support/chat-bridge", json={
+r = requests.post(f"{BASE}/v1/support/chat-bridge", json={
     "shipment_id": shipment_id,
     "requester_id": "consumer-uid",
     "requester_role": "CONSUMER",
@@ -327,13 +328,13 @@ print("\n" + "="*60)
 print("  13. ANALYTICS & BILLING")
 print("="*60)
 
-r = client.get(f"/v1/analytics/shipment/{shipment_id}")
+r = requests.get(f"{BASE}/v1/analytics/shipment/{shipment_id}")
 log("GET /analytics/shipment/{id}", r.status_code == 200 and "carbon_footprint" in r.json(), r.json())
 
-r = client.get(f"/v1/analytics/package-integrity/{shipment_id}?cargo_type=fragile&weight_kg=15&mode=ROAD_CAR")
+r = requests.get(f"{BASE}/v1/analytics/package-integrity/{shipment_id}?cargo_type=fragile&weight_kg=15&mode=ROAD_CAR")
 log("GET /analytics/package-integrity (fragile)", r.status_code == 200 and "integrity_score" in r.json(), r.json())
 
-r = client.get("/v1/billing/estimate?origin_lat=22.5436&origin_lng=85.7969&dest_lat=22.7681&dest_lng=86.2007&mode=ROAD_CAR&weight_kg=25&is_express=true&is_fragile=true")
+r = requests.get(f"{BASE}/v1/billing/estimate?origin_lat=22.5436&origin_lng=85.7969&dest_lat=22.7681&dest_lng=86.2007&mode=ROAD_CAR&weight_kg=25&is_express=true&is_fragile=true")
 log("GET /billing/estimate (express+fragile)", r.status_code == 200 and "cost_breakdown" in r.json(), r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -343,32 +344,32 @@ print("\n" + "="*60)
 print("  14. ADMIN DASHBOARD (8 ENDPOINTS)")
 print("="*60)
 
-r = client.get("/v1/admin/fleet-status?region=east")
+r = requests.get(f"{BASE}/v1/admin/fleet-status?region=east")
 log("GET /admin/fleet-status", r.status_code == 200 and "status_breakdown" in r.json(), r.json())
 
-r = client.get("/v1/admin/system-metrics")
+r = requests.get(f"{BASE}/v1/admin/system-metrics")
 log("GET /admin/system-metrics", r.status_code == 200 and "server_status" in r.json(), r.json())
 
-r = client.get("/v1/admin/active-sessions")
+r = requests.get(f"{BASE}/v1/admin/active-sessions")
 log("GET /admin/active-sessions", r.status_code == 200 and "total_active" in r.json(), r.json())
 
-r = client.get("/v1/admin/shipment-heatmap?time_range=24h")
+r = requests.get(f"{BASE}/v1/admin/shipment-heatmap?time_range=24h")
 log("GET /admin/shipment-heatmap", r.status_code == 200 and "hotspots" in r.json(), r.json())
 
-r = client.post("/v1/admin/broadcast", json={
+r = requests.post(f"{BASE}/v1/admin/broadcast", json={
     "title": "Maintenance Alert",
     "body": "Scheduled downtime tonight 2AM-4AM IST",
     "priority": "HIGH"
 })
 log("POST /admin/broadcast", r.status_code == 200, r.json())
 
-r = client.get("/v1/admin/driver-leaderboard?time_range=30d&limit=5")
+r = requests.get(f"{BASE}/v1/admin/driver-leaderboard?time_range=30d&limit=5")
 log("GET /admin/driver-leaderboard", r.status_code == 200 and "leaderboard" in r.json(), r.json())
 
-r = client.get("/v1/admin/route-efficiency?time_range=30d")
+r = requests.get(f"{BASE}/v1/admin/route-efficiency?time_range=30d")
 log("GET /admin/route-efficiency", r.status_code == 200 and "garuda_vs_legacy" in r.json(), r.json())
 
-r = client.get("/v1/admin/disruption-log?limit=10&severity_min=0.5")
+r = requests.get(f"{BASE}/v1/admin/disruption-log?limit=10&severity_min=0.5")
 log("GET /admin/disruption-log", r.status_code == 200 and "disruptions" in r.json(), r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -378,7 +379,7 @@ print("\n" + "="*60)
 print("  15. EMERGENCY & INCIDENT HANDLING")
 print("="*60)
 
-r = client.post(f"/v1/shipments/{shipment_id}/exception", json={
+r = requests.post(f"{BASE}/v1/shipments/{shipment_id}/exception", json={
     "exception_type": "DAMAGED",
     "description": "Package box crushed during loading",
     "severity": 0.7,
@@ -386,7 +387,7 @@ r = client.post(f"/v1/shipments/{shipment_id}/exception", json={
 })
 log("POST /shipments/{id}/exception", r.status_code == 200 and r.json().get("status") == "logged", r.json())
 
-r = client.post(f"/v1/shipments/{shipment_id}/report-incident", json={
+r = requests.post(f"{BASE}/v1/shipments/{shipment_id}/report-incident", json={
     "incident_type": "ROAD_BLOCK",
     "description": "Fallen tree blocking NH-33 near Gamharia",
     "location": {"lat": 22.650000, "lng": 85.900000},
@@ -395,7 +396,7 @@ r = client.post(f"/v1/shipments/{shipment_id}/report-incident", json={
 })
 log("POST /shipments/{id}/report-incident", r.status_code == 200 and r.json().get("status") == "reported", r.json())
 
-r = client.get(f"/v1/shipments/{shipment_id}/risk-details")
+r = requests.get(f"{BASE}/v1/shipments/{shipment_id}/risk-details")
 log("GET /shipments/{id}/risk-details", r.status_code == 200 and "explanation" in r.json(), r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -405,9 +406,10 @@ print("\n" + "="*60)
 print("  16. LIVE TRACKING STREAM (SSE)")
 print("="*60)
 
-r = client.get(f"/v1/shipments/{shipment_id}/live")
+r = requests.get(f"{BASE}/v1/shipments/{shipment_id}/live", stream=True)
 log("GET /shipments/{id}/live (SSE stream)", 
     r.status_code == 200 and r.headers.get("content-type", "").startswith("text/event-stream"))
+r.close()
 
 # ═══════════════════════════════════════════════════════════════
 # 17. SHIPMENT TIMELINE  ★ NEW ★
@@ -416,7 +418,7 @@ print("\n" + "="*60)
 print("  17. SHIPMENT TIMELINE")
 print("="*60)
 
-r = client.get(f"/v1/shipments/{shipment_id}/timeline")
+r = requests.get(f"{BASE}/v1/shipments/{shipment_id}/timeline")
 log("GET /shipments/{id}/timeline", r.status_code == 200 and "timeline" in r.json(), r.json())
 
 # ═══════════════════════════════════════════════════════════════
@@ -426,7 +428,7 @@ print("\n" + "="*60)
 print("  18. GARUDA INTELLIGENCE (Geofence / Fatigue / Demand)")
 print("="*60)
 
-r = client.post("/v1/geofence/check", json={
+r = requests.post(f"{BASE}/v1/geofence/check", json={
     "shipment_id": shipment_id,
     "current_location": {"lat": 22.750000, "lng": 86.180000},
     "zone_center": {"lat": 22.768116, "lng": 86.200684},
@@ -435,7 +437,7 @@ r = client.post("/v1/geofence/check", json={
 })
 log("POST /geofence/check (near zone)", r.status_code == 200 and "is_inside" in r.json(), r.json())
 
-r = client.post("/v1/geofence/check", json={
+r = requests.post(f"{BASE}/v1/geofence/check", json={
     "shipment_id": shipment_id,
     "current_location": {"lat": 22.543610, "lng": 85.796856},
     "zone_center": {"lat": 22.768116, "lng": 86.200684},
@@ -444,7 +446,7 @@ r = client.post("/v1/geofence/check", json={
 })
 log("POST /geofence/check (far from zone)", r.status_code == 200 and r.json().get("is_inside") == False, r.json())
 
-r = client.post("/v1/driver/fatigue-check", json={
+r = requests.post(f"{BASE}/v1/driver/fatigue-check", json={
     "driver_id": "driver-uid",
     "drive_start_time": "2026-04-26T06:00:00+05:30",
     "current_location": {"lat": 22.650000, "lng": 85.900000},
@@ -453,7 +455,7 @@ r = client.post("/v1/driver/fatigue-check", json={
 })
 log("POST /driver/fatigue-check", r.status_code == 200 and "fatigue_score" in r.json(), r.json())
 
-r = client.post("/v1/predictions/demand-surge", json={
+r = requests.post(f"{BASE}/v1/predictions/demand-surge", json={
     "region_center": {"lat": 22.650000, "lng": 85.900000},
     "radius_km": 100,
     "prediction_window_days": 7,
@@ -468,7 +470,7 @@ print("\n" + "="*60)
 print("  19. EDGE CASES FOR NEW ENDPOINTS")
 print("="*60)
 
-r = client.post("/v1/routes/reroute", json={
+r = requests.post(f"{BASE}/v1/routes/reroute", json={
     "session_id": "invalid-session",
     "origin": {"lat": 22.5, "lng": 85.8},
     "destination": {"lat": 22.7, "lng": 86.2},
@@ -476,7 +478,7 @@ r = client.post("/v1/routes/reroute", json={
 })
 log("Reroute with invalid session → 401", r.status_code == 401)
 
-r = client.post("/v1/risk/evaluate", json={
+r = requests.post(f"{BASE}/v1/risk/evaluate", json={
     "origin": {"lat": 22.5, "lng": 85.8},
     "destination": {"lat": 22.7, "lng": 86.2},
     "mode": "ROAD_CAR",
@@ -484,10 +486,10 @@ r = client.post("/v1/risk/evaluate", json={
 })
 log("Risk evaluate (hazardous cargo)", r.status_code == 200 and r.json().get("cargo_multiplier") == 1.5)
 
-r = client.get("/v1/billing/estimate?origin_lat=22.5&origin_lng=85.8&dest_lat=22.7&dest_lng=86.2&mode=FLIGHT&weight_kg=5")
+r = requests.get(f"{BASE}/v1/billing/estimate?origin_lat=22.5&origin_lng=85.8&dest_lat=22.7&dest_lng=86.2&mode=FLIGHT&weight_kg=5")
 log("Billing estimate (FLIGHT mode)", r.status_code == 200)
 
-r = client.post("/v1/disruptions/detect", json={
+r = requests.post(f"{BASE}/v1/disruptions/detect", json={
     "center": {"lat": 22.5, "lng": 85.8},
     "radius_km": 200,
     "modes_to_check": ["ROAD_CAR", "RAIL", "FLIGHT"]
