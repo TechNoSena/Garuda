@@ -1,125 +1,92 @@
-# 🦅 Garuda Logistics API - Flutter Integration Guide
+# 🦅 Project Garuda: Flutter Developer's Handook
 
-Welcome to the Garuda Backend API! This guide is designed specifically for the Flutter frontend developer to easily connect the mobile app to our Python FastAPI backend.
-
-The backend is a **Full Omnichannel Logistics Management System** with live Firebase integration and real-time AI Risk Intelligence.
+Welcome to the mission control for Project Garuda. This document is your technical blueprint for connecting the Flutter frontend to our high-performance, AI-driven logistics backend.
 
 ---
 
-## 🚀 Getting Started
-
-**Base URL (Local Testing):** `http://10.0.2.2:8000` (for Android Emulator) or `http://localhost:8000` (for iOS Simulator / Web)
-
-### Interactive API Docs (Swagger)
-When the backend is running, you can view the interactive documentation and test payloads directly at:
-👉 `http://localhost:8000/docs`
+## 💎 Premium API Documentation (Scalar)
+Forget old-school Swagger. We use **Scalar** for a modern, high-tech API testing experience.
+👉 **Docs URL:** `http://localhost:8000/scalar`
+*Features: Dark Mode, Code Snippet Generation (Dart/HTTP), and live request testing.*
 
 ---
 
-## 👥 User Roles
-The app will have 4 main types of users. You should handle UI routing based on the `role` returned during login:
-1. `SUPPLIER`: Creates shipments and tracks them.
-2. `LOGISTICS`: Assigns delivery men and views optimal pathways.
-3. `DELIVERY_MAN`: Uses the app to navigate (Multi-stop) and updates live locations.
-4. `CONSUMER`: Tracks their package using a Tracking ID.
+## 🛠️ Connectivity & Environment
+- **Base URL (Local Android):** `http://10.0.2.2:8000`
+- **Base URL (iOS/Web):** `http://localhost:8000`
+- **Headers:** All private requests require `Content-Type: application/json`. Auth headers should be passed as `Authorization: Bearer <idToken>`.
 
 ---
 
-## 🔐 1. Authentication Endpoints
+## 🌊 Core Workflows by User Role
 
-### Register User
-`POST /v1/auth/register`
-```json
-// Request
-{
-  "email": "driver@garuda.com",
-  "password": "securepassword",
-  "name": "Rahul Kumar",
-  "role": "DELIVERY_MAN", // SUPPLIER | LOGISTICS | DELIVERY_MAN | CONSUMER
-  "company_name": "Optional"
-}
-// Response -> Returns User Data & UID
-```
+### 1. 🏗️ Supplier (The Originator)
+- **Goal:** Create and monitor orders.
+- **Key API:** `POST /v1/shipments/`
+- **Workflow:** 
+  - Input origin/destination coordinates.
+  - Select mode (ROAD, RAIL, FLIGHT).
+  - Backend returns a `shipment_id`. Save this!
 
-### Login User
-`POST /v1/auth/login`
-```json
-// Request
-{
-  "email": "driver@garuda.com",
-  "password": "securepassword"
-}
-// Response -> Returns Firebase idToken (save this securely in Flutter Secure Storage)
-```
+### 2. 🚛 Logistics Partner (The Orchestrator)
+- **Goal:** Assign delivery personnel and optimize fleets.
+- **Key API:** `PATCH /v1/shipments/{id}/assign`
+- **Workflow:**
+  - View all `PENDING` shipments.
+  - Assign a `delivery_man_id` from your team.
 
----
+### 3. 🛵 Delivery Man (The Executor)
+- **Goal:** Navigate efficiently and update status.
+- **Key API:** `POST /v1/routes/optimize-multi`
+- **Workflow:**
+  - Send a list of 10 stops. Backend returns them in the **optimal order (TSP)**.
+  - PING `PATCH /v1/shipments/{id}/location` every 5-10 minutes via background service.
+  - **Live Monitoring:** Call `POST /v1/ride/monitor` periodically. If response is `REROUTE_SUGGESTED`, show a high-priority overlay in Flutter to recalculate the path.
 
-## 📦 2. Shipment Management
-
-### Create Shipment (Supplier Action)
-`POST /v1/shipments/`
-```json
-// Request
-{
-  "supplier_id": "uid_of_supplier",
-  "logistics_id": "uid_of_logistics_company",
-  "consumer_email": "consumer@email.com",
-  "origin": {"lat": 22.543610, "lng": 85.796856},
-  "destination": {"lat": 22.768116, "lng": 86.200684},
-  "route_mode": "ROAD_CAR" // ROAD_CAR, ROAD_BIKE, RAIL, FLIGHT, SHIP
-}
-// Response -> Returns the `shipment_id` (Tracking ID)
-```
-
-### Track/Get Shipment
-`GET /v1/shipments/{shipment_id}`
-Returns all details about the shipment, including `current_location` and `status` (`PENDING`, `ASSIGNED`, `DISPATCHED`, `IN_TRANSIT`, `DELIVERED`).
-
-### Update Live Location (Delivery Man Action)
-`PATCH /v1/shipments/{shipment_id}/location`
-```json
-// Request (Triggered by Flutter's background location service)
-{
-  "current_location": {"lat": 22.650000, "lng": 85.900000}
-}
-```
+### 4. 👤 Consumer (The Receiver)
+- **Goal:** Track package in real-time.
+- **Key API:** `GET /v1/shipments/{id}`
+- **Workflow:**
+  - Poll this endpoint to update the package icon on the map.
+  - Display the `status` (`IN_TRANSIT`, `DELIVERED`, etc.) prominently.
 
 ---
 
-## 🗺️ 3. Routing & Intelligence (Core Features)
-
-Before using these, hit `POST /v1/session/start` to get a `session_id`. Pass this `session_id` in all routing requests.
-
-### Fetch Best Routes
-`POST /v1/routes/fetch`
-Pass `session_id`, `origin`, `destination`, and `mode`. Returns a list of Google Maps polylines, distances, and times.
-
-### Deep Risk Analysis (AI Intelligence)
+## 🧠 AI Intelligence: Risk Analysis
+Before starting any journey, call:
 `POST /v1/routes/analyze`
-Pass the selected route data. The backend will use Gemini to crawl the web for live weather, protests, and traffic, and return a `RiskScore` along with a custom **Heads-Up** message (e.g., "Carry a raincoat").
-*Show this Heads-Up prominently in the UI before they start the ride.*
+**Response Payload:**
+- `verdict`: "SAFE" or "CAUTION"
+- `analysis.heads_up`: "Specific AI advice" (e.g., "Heavy rain at Toll Plaza 3, carry extra fuel.")
+- `analysis.final_risk_score`: 0-100%
 
-### Multi-Stop Optimization (Traveling Salesman Problem)
-`POST /v1/routes/optimize-multi`
-If a delivery man has 10 packages to drop off, send an array of 10 `LatLng` points. The backend will return them completely reordered for the fastest delivery time!
-
-### Live Ride Monitoring (Active Trip)
-`POST /v1/ride/monitor`
-While the delivery man is driving, ping this every 5-10 minutes. 
-```json
-// Request
-{
-  "session_id": "uuid",
-  "current_location": {"lat": ..., "lng": ...},
-  "destination": {"lat": ..., "lng": ...},
-  "mode": "ROAD_CAR"
-}
-```
-**Handling the Response in Flutter:**
-If the backend detects a sudden severe roadblock or extreme weather, it will return `"status": "REROUTE_SUGGESTED"`. Your Flutter app should immediately trigger a warning dialog and redraw the map with the `new_route` provided in the response!
+*UI Suggestion: Use a Glassmorphic Card to show the 'Heads-Up' before the driver clicks "Start Navigation".*
 
 ---
 
-## 🛠️ Important Notes for Flutter
-1. **Google Maps UI**: The backend returns raw `polyline` strings. You will need to decode these strings in Flutter (using a package like `flutter_polyline_points`) to draw the actual blue line on your `GoogleMap` widget.
-2. **Tokens**: Currently, auth endpoints return standard Firebase structures. Handle the token expiry locally or use the Firebase Flutter SDK alongside the backend for seamless state management.
+## 📍 Flutter Integration Tips
+
+### 1. Decoding Polylines
+The backend returns encoded polylines (from Google Routes API).
+```dart
+// Use the 'flutter_polyline_points' package
+PolylinePoints polylinePoints = PolylinePoints();
+List<PointLatLng> result = polylinePoints.decodePolyline(encodedString);
+```
+
+### 2. Background Tasks
+For the Delivery Man app, use `flutter_background_service` to ensure location updates continue even when the phone is in the driver's pocket.
+
+### 3. State Management
+- Use **Riverpod** or **Bloc** to handle the Shipment status lifecycle.
+- Listen for `REROUTE_SUGGESTED` events to trigger a local notification or sound alert.
+
+---
+
+## 🚥 API Status Codes
+- `200 OK`: Request successful.
+- `400 Bad Request`: Validation error (check your Lat/Lng formats).
+- `401 Unauthorized`: Session expired or invalid token.
+- `404 Not Found`: Shipment ID doesn't exist.
+
+---

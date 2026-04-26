@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from scalar_fastapi import get_scalar_api_reference
 
 # Initialize Config & Firebase
 import app.config
@@ -7,10 +8,18 @@ import app.config
 # Import Routers
 from app.routers import auth, shipments, routing
 
+from fastapi.responses import RedirectResponse
+
 app = FastAPI(
     title="Garuda Logistics Management Backend",
-    description="Full Omnichannel Routing and Logistics Tracking Platform"
+    description="Full Omnichannel Routing and Logistics Tracking Platform",
+    docs_url=None,
+    redoc_url=None
 )
+
+@app.get("/docs", include_in_schema=False)
+async def redirected_docs():
+    return RedirectResponse(url="/scalar")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,6 +33,13 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(shipments.router)
 app.include_router(routing.router)
+
+@app.get("/scalar", include_in_schema=False)
+async def scalar_html():
+    return get_scalar_api_reference(
+        openapi_url=app.openapi_url,
+        title=app.title,
+    )
 
 if __name__ == "__main__":
     import uvicorn

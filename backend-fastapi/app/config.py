@@ -25,8 +25,12 @@ except Exception as e:
 # Initialize Firebase Admin
 db = None
 try:
-    # Look for serviceAccountKey.json in the current directory or parent
+    # Look for serviceAccountKey.json in the CWD or app root
     key_path = os.getenv("FIREBASE_KEY_PATH", "serviceAccountKey.json")
+    # Fallback to absolute path relative to this file
+    if not os.path.exists(key_path):
+        key_path = os.path.join(os.path.dirname(__file__), "..", "serviceAccountKey.json")
+
     if os.path.exists(key_path):
         cred = credentials.Certificate(key_path)
         firebase_admin.initialize_app(cred)
