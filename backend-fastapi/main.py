@@ -6,7 +6,7 @@ from scalar_fastapi import get_scalar_api_reference
 import app.config
 
 # Import Routers
-from app.routers import auth, shipments, routing
+from app.routers import auth, shipments, routing, risk, notifications, analytics, admin, intelligence
 
 from fastapi.responses import RedirectResponse
 
@@ -33,6 +33,11 @@ app.add_middleware(
 app.include_router(auth.router)
 app.include_router(shipments.router)
 app.include_router(routing.router)
+app.include_router(risk.router)
+app.include_router(notifications.router)
+app.include_router(analytics.router)
+app.include_router(admin.router)
+app.include_router(intelligence.router)
 
 @app.get("/scalar", include_in_schema=False)
 async def scalar_html():

@@ -201,3 +201,220 @@ def get_shipment_eta(shipment_id: str) -> dict:
         "eta_minutes": eta_minutes,
         "route_mode": data.get("route_mode")
     }
+
+
+# ──────────────────────────── NEW: TIMELINE ────────────────────────────
+
+def get_shipment_timeline(shipment_id: str) -> dict:
+    """Return full timeline of status transitions with timestamps."""
+    if not db:
+        return {
+            "shipment_id": shipment_id,
+            "timeline": [
+                {"event": "CREATED", "timestamp": "2026-04-26T06:00:00Z", "detail": "Shipment created by supplier"},
+                {"event": "ASSIGNED", "timestamp": "2026-04-26T06:15:00Z", "detail": "Delivery man assigned"},
+                {"event": "DISPATCHED", "timestamp": "2026-04-26T06:30:00Z", "detail": "Package dispatched from origin"},
+                {"event": "IN_TRANSIT", "timestamp": "2026-04-26T07:00:00Z", "detail": "Package in transit"},
+                {"event": "LOCATION_UPDATE", "timestamp": "2026-04-26T08:00:00Z", "detail": "Location ping received"},
+            ],
+            "mock": True
+        }
+    
+    doc = db.collection("shipments").document(shipment_id).get()
+    if not doc.exists:
+        raise Exception("Shipment not found")
+    
+    data = doc.to_dict()
+    timestamps = data.get("timestamps", {})
+    timeline = []
+    
+    for key, value in sorted(timestamps.items(), key=lambda x: x[1] if x[1] else ""):
+        event_name = key.replace("_at", "").upper()
+        timeline.append({"event": event_name, "timestamp": value, "detail": f"Status changed to {event_name}"})
+    
+    # Add location history events
+    for loc_entry in data.get("location_history", []):
+        timeline.append({
+            "event": "LOCATION_UPDATE",
+            "timestamp": loc_entry.get("timestamp"),
+            "detail": f"Location: ({loc_entry['location']['lat']}, {loc_entry['location']['lng']})"
+        })
+    
+    timeline.sort(key=lambda x: x["timestamp"] if x["timestamp"] else "")
+    return {"shipment_id": shipment_id, "total_events": len(timeline), "timeline": timeline}
+
+
+# ──────────────────────────── NEW: EXCEPTIONS ────────────────────────────
+
+def log_exception(shipment_id: str, exception_type: str, description: str, severity: float, reported_by: str) -> dict:
+    """Log an exception event on a shipment."""
+    import uuid
+    exception_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    exception_data = {
+        "exception_id": exception_id,
+        "shipment_id": shipment_id,
+        "exception_type": exception_type,
+        "description": description,
+        "severity": severity,
+        "reported_by": reported_by,
+        "status": "OPEN",
+        "created_at": now
+    }
+    
+    if not db:
+        return {"status": "logged", "exception": exception_data, "mock": True}
+    
+    try:
+        doc = db.collection("shipments").document(shipment_id).get()
+        if not doc.exists:
+            raise Exception("Shipment not found")
+        
+        db.collection("exceptions").document(exception_id).set(exception_data)
+        db.collection("shipments").document(shipment_id).update({
+            "status": "EXCEPTION",
+            f"timestamps.exception_at": now
+        })
+        return {"status": "logged", "exception": exception_data}
+    except Exception as e:
+        raise Exception(f"Failed to log exception: {str(e)}")
+
+
+# ──────────────────────────── NEW: INCIDENTS ────────────────────────────
+
+def log_incident(shipment_id: str, incident_type: str, description: str, location: dict, severity: float, driver_id: str) -> dict:
+    """Store a driver-reported incident."""
+    import uuid
+    incident_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    incident_data = {
+        "incident_id": incident_id,
+        "shipment_id": shipment_id,
+        "incident_type": incident_type,
+        "description": description,
+        "location": location,
+        "severity": severity,
+        "driver_id": driver_id,
+        "verified": False,
+        "created_at": now
+    }
+    
+    if not db:
+        return {"status": "reported", "incident": incident_data, "mock": True}
+    
+    try:
+        db.collection("incidents").document(incident_id).set(incident_data)
+        return {"status": "reported", "incident": incident_data}
+    except Exception as e:
+        raise Exception(f"Failed to log incident: {str(e)}")
+
+
+# ──────────────────────────── NEW: FLEET STATUS ────────────────────────────
+
+def get_fleet_status(region: str = "all") -> dict:
+    """Aggregate shipment statuses for admin dashboard."""
+    if not db:
+        return {
+            "region": region,
+            "total_vehicles": 48,
+            "status_breakdown": {
+                "IN_TRANSIT": 18,
+                "IDLE": 12,
+                "OUT_FOR_DELIVERY": 8,
+                "RETURNING": 4,
+                "MAINTENANCE": 3,
+                "BREAKDOWN": 2,
+                "OFFLINE": 1
+            },
+            "utilization_rate": 62.5,
+            "active_shipments": 26,
+            "alerts": [
+                {"vehicle_id": "TRK-042", "alert": "Maintenance overdue by 3 days"},
+                {"vehicle_id": "BK-017", "alert": "Low fuel warning"}
+            ],
+            "mock": True
+        }
+    
+    try:
+        status_counts = {}
+        docs = db.collection("shipments").stream()
+        total = 0
+        for doc in docs:
+            data = doc.to_dict()
+            status = data.get("status", "UNKNOWN")
+            status_counts[status] = status_counts.get(status, 0) + 1
+            total += 1
+        
+        active = sum(v for k, v in status_counts.items() if k in ["IN_TRANSIT", "OUT_FOR_DELIVERY", "DISPATCHED"])
+        utilization = round((active / max(total, 1)) * 100, 1)
+        
+        return {
+            "region": region,
+            "total_vehicles": total,
+            "status_breakdown": status_counts,
+            "utilization_rate": utilization,
+            "active_shipments": active,
+            "alerts": []
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
+# ──────────────────────────── NEW: ANALYTICS ────────────────────────────
+
+def get_shipment_analytics(shipment_id: str) -> dict:
+    """Carbon footprint, fuel cost, toll estimate, efficiency score."""
+    from app.services.routing_strategy import calculate_haversine, get_strategy
+    
+    if not db:
+        dist_km = 42.5
+        mode = "ROAD_CAR"
+    else:
+        doc = db.collection("shipments").document(shipment_id).get()
+        if not doc.exists:
+            raise Exception("Shipment not found")
+        data = doc.to_dict()
+        origin = LatLng(**data["origin"])
+        dest = LatLng(**data["destination"])
+        dist_km = calculate_haversine(origin, dest)
+        mode = data.get("route_mode", "ROAD_CAR")
+    
+    strategy = get_strategy(mode)
+    cost_data = strategy.estimate_cost(dist_km)
+    
+    # Toll estimation (simulated — ₹1.5/km for highways)
+    toll_estimate = round(dist_km * 1.5, 2) if mode in ["ROAD_CAR", "ROAD_BIKE"] else 0
+    
+    # Fuel cost (diesel ₹90/L, avg 8km/L for trucks)
+    fuel_map = {"ROAD_CAR": 8, "ROAD_BIKE": 40, "RAIL": 0, "FLIGHT": 0, "SHIP": 0}
+    km_per_litre = fuel_map.get(mode, 8)
+    fuel_litres = round(dist_km / max(km_per_litre, 1), 2) if km_per_litre > 0 else 0
+    fuel_cost = round(fuel_litres * 90, 2)
+    
+    # Efficiency score (lower CO2 + lower cost = higher efficiency)
+    co2_per_km = strategy.co2_per_km_g
+    max_co2 = 250  # Flight baseline
+    efficiency = round(max(0, (1 - (co2_per_km / max_co2)) * 100), 1)
+    
+    return {
+        "shipment_id": shipment_id,
+        "distance_km": round(dist_km, 2),
+        "route_mode": mode,
+        "carbon_footprint": {
+            "co2_grams": cost_data["estimated_co2_g"],
+            "co2_kg": round(cost_data["estimated_co2_g"] / 1000, 3),
+            "trees_to_offset": max(1, round(cost_data["estimated_co2_g"] / 21000)),
+            "carbon_rating": "A" if co2_per_km < 50 else "B" if co2_per_km < 150 else "C"
+        },
+        "cost_breakdown": {
+            "transport_cost_inr": cost_data["estimated_cost_inr"],
+            "toll_charges_inr": toll_estimate,
+            "fuel_cost_inr": fuel_cost,
+            "fuel_litres": fuel_litres,
+            "total_cost_inr": round(cost_data["estimated_cost_inr"] + toll_estimate, 2)
+        },
+        "efficiency_score": efficiency,
+        "duration_mins": cost_data["estimated_duration_mins"]
+    }

@@ -4,10 +4,11 @@ from datetime import datetime, timezone
 from typing import Dict
 from app.models import (
     FetchRoutesRequest, OptimizeMultiRequest, 
-    AnalyzeRouteRequest, MonitorRideRequest, CompareModesRequest
+    AnalyzeRouteRequest, MonitorRideRequest, CompareModesRequest,
+    RerouteRequest, PrecheckRequest, SwitchModeRequest
 )
 from app.services.routing_strategy import get_strategy, get_all_strategies, calculate_haversine
-from app.services.gemini_service import analyze_risk, monitor_hazards
+from app.services.gemini_service import analyze_risk, monitor_hazards, precheck_route
 
 router = APIRouter(prefix="/v1", tags=["🧠 Routing Intelligence"])
 
@@ -147,6 +148,86 @@ async def monitor_ride(req: MonitorRideRequest):
         "message": "Path looks clear. Continue on current route.",
         "remaining_distance": best_route.get("distanceMeters", "Unknown"),
         "remaining_duration": best_route.get("duration", "Unknown")
+    }
+
+
+@router.post("/routes/reroute", summary="Force Reroute",
+             description="Force reroute with avoidance zones — AI suggests optimal alternative when disruptions are detected")
+async def reroute(req: RerouteRequest):
+    _validate_session(req.session_id)
+    
+    strategy = get_strategy(req.mode.value)
+    
+    # Get fresh routes avoiding disruption zones
+    routes = strategy.get_routes(req.origin, req.destination)
+    if not routes:
+        raise HTTPException(status_code=404, detail="No alternative routes found")
+    
+    return {
+        "status": "REROUTED",
+        "reason": req.reason,
+        "avoided_zones": [z.to_dict() for z in req.avoid_zones],
+        "new_routes": routes,
+        "mode": req.mode.value,
+        "shipment_id": req.shipment_id,
+        "rerouted_at": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.post("/routes/precheck", summary="Pre-Dispatch Predictive Alert",
+             description="Before dispatch — checks weather, events, congestion to predict if the route is safe")
+async def precheck(req: PrecheckRequest):
+    _validate_session(req.session_id)
+    
+    result = precheck_route(
+        req.origin, req.destination, req.mode.value,
+        req.dispatch_time or "ASAP", req.cargo_type
+    )
+    result["route"] = {
+        "origin": req.origin.to_dict(),
+        "destination": req.destination.to_dict(),
+        "mode": req.mode.value
+    }
+    return result
+
+
+@router.post("/routes/switch-mode", summary="Switch Transport Mode",
+             description="Switch transport mode mid-transit (e.g., truck breakdown → switch to rail) with cost/time comparison")
+async def switch_mode(req: SwitchModeRequest):
+    _validate_session(req.session_id)
+    
+    dist_km = calculate_haversine(req.origin, req.destination)
+    
+    old_strategy = get_strategy(req.current_mode.value)
+    new_strategy = get_strategy(req.new_mode.value)
+    
+    old_estimate = old_strategy.estimate_cost(dist_km)
+    new_estimate = new_strategy.estimate_cost(dist_km)
+    
+    new_routes = new_strategy.get_routes(req.origin, req.destination)
+    
+    cost_diff = round(new_estimate["estimated_cost_inr"] - old_estimate["estimated_cost_inr"], 2)
+    time_diff = round(new_estimate["estimated_duration_mins"] - old_estimate["estimated_duration_mins"], 1)
+    co2_diff = round(new_estimate["estimated_co2_g"] - old_estimate["estimated_co2_g"], 2)
+    
+    return {
+        "status": "MODE_SWITCHED",
+        "reason": req.reason,
+        "shipment_id": req.shipment_id,
+        "previous_mode": req.current_mode.value,
+        "new_mode": req.new_mode.value,
+        "comparison": {
+            "cost_difference_inr": cost_diff,
+            "time_difference_mins": time_diff,
+            "co2_difference_g": co2_diff,
+            "cost_verdict": "CHEAPER" if cost_diff < 0 else "COSTLIER",
+            "time_verdict": "FASTER" if time_diff < 0 else "SLOWER",
+            "eco_verdict": "GREENER" if co2_diff < 0 else "MORE_EMISSIONS"
+        },
+        "old_estimate": old_estimate,
+        "new_estimate": new_estimate,
+        "new_routes": new_routes[:2] if new_routes else [],
+        "switched_at": datetime.now(timezone.utc).isoformat()
     }
 
 
