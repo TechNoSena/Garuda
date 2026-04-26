@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/shipment_model.dart';
 import '../services/api_service.dart';
+import '../models/intelligence_model.dart';
 
 class ShipmentState {
   final List<Shipment> shipments;
@@ -137,6 +138,41 @@ class ShipmentNotifier extends StateNotifier<ShipmentState> {
       await _api.updateShipmentLocation(shipmentId, location);
     } catch (e) {
       state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<List<TimelineEvent>> getTimeline(String id) async {
+    try {
+      return await _api.getShipmentTimeline(id);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return [];
+    }
+  }
+
+  Future<void> logException(String id, String type, String description, double severity, String driverId) async {
+    try {
+      await _api.logException(id, type, description, severity, driverId);
+      await selectShipment(id); // refresh
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<void> reportIncident(String id, String type, String description, LatLng location, double severity, String driverId) async {
+    try {
+      await _api.reportIncident(id, type, description, location, severity, driverId);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+    }
+  }
+
+  Future<ExplainableRiskDetails?> getRiskDetails(String id) async {
+    try {
+      return await _api.getRiskDetails(id);
+    } catch (e) {
+      state = state.copyWith(error: e.toString());
+      return null;
     }
   }
 

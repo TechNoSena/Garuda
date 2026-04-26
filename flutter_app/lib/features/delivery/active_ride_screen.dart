@@ -6,6 +6,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/providers/routing_provider.dart';
 import '../../core/providers/monitor_provider.dart';
+import '../../core/providers/intelligence_provider.dart';
+import '../../core/providers/auth_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/loading_shimmer.dart';
 import '../../core/widgets/mode_icon.dart';
@@ -263,9 +265,90 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                       ],
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // Fatigue check
+                  SizedBox(
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final driverId = ref.read(authProvider).user?.uid ?? 'unknown-driver';
+                        final loc = shipment.currentLocation ?? shipment.origin;
+                        final res = await ref.read(intelligenceProvider).checkDriverFatigue(
+                          driverId: driverId,
+                          driveStartTime: DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(), // Mock 5 hrs
+                          currentLocation: loc,
+                          totalKmDriven: 180,
+                          breaksTaken: 1,
+                        );
+                        if (mounted) {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              backgroundColor: GarudaColors.surface,
+                              title: Text('Fatigue Assessment: ${res.riskLevel}', style: GoogleFonts.outfit(color: GarudaColors.textPrimary)),
+                              content: Text(res.recommendations.join('\n'), style: GoogleFonts.inter(color: GarudaColors.textSecondary)),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                      style: OutlinedButton.styleFrom(foregroundColor: GarudaColors.warning),
+                      icon: const Icon(Icons.health_and_safety),
+                      label: const Text('Check Driver Fatigue'),
+                    ),
+                  ),
                 ],
               ),
             ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showReportIncidentDialog(context),
+        backgroundColor: GarudaColors.danger,
+        icon: const Icon(Icons.report_problem),
+        label: Text('Report Incident', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+
+  void _showReportIncidentDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          backgroundColor: GarudaColors.surface,
+          title: Text('Report Incident', style: GoogleFonts.outfit(color: GarudaColors.textPrimary)),
+          content: Text('Report a roadblock, accident, or hazard.', style: GoogleFonts.inter(color: GarudaColors.textSecondary)),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                final shipment = ref.read(shipmentProvider).selectedShipment;
+                final driverId = ref.read(authProvider).user?.uid ?? 'unknown-driver';
+                if (shipment != null) {
+                  await ref.read(shipmentProvider.notifier).reportIncident(
+                    widget.shipmentId,
+                    'ROAD_BLOCK',
+                    'Driver reported sudden roadblock',
+                    shipment.currentLocation ?? shipment.origin,
+                    0.8,
+                    driverId,
+                  );
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incident reported')));
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: GarudaColors.danger),
+              child: const Text('Report'),
+            ),
+          ],
+        );
+      },
     );
   }
 

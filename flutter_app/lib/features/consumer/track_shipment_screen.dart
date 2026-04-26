@@ -7,6 +7,10 @@ import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/status_timeline.dart';
 import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/loading_shimmer.dart';
+import '../../core/models/intelligence_model.dart';
+import 'dart:convert';
+import 'package:flutter_client_sse/flutter_client_sse.dart';
+import '../../core/services/api_service.dart';
 
 class TrackShipmentScreen extends ConsumerStatefulWidget {
   final String shipmentId;
@@ -17,15 +21,46 @@ class TrackShipmentScreen extends ConsumerStatefulWidget {
 }
 
 class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
+  List<TimelineEvent> _timelineEvents = [];
+  bool _isLoadingTimeline = false;
+  
   @override
   void initState() {
     super.initState();
     _load();
+    _startSSE();
   }
 
-  void _load() {
+  void _startSSE() {
+    ApiService().getLiveTrackingStream(widget.shipmentId).listen((event) {
+      if (event.data != null && mounted) {
+        try {
+          final data = jsonDecode(event.data!);
+          // Real app would update a live map here with data['lat'], data['lng']
+          // For now, we just refresh the whole view occasionally
+        } catch (_) {}
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    SSEClient.unsubscribeFromSSE();
+    super.dispose();
+  }
+
+  Future<void> _load() async {
     ref.read(shipmentProvider.notifier).selectShipment(widget.shipmentId);
     ref.read(shipmentProvider.notifier).loadEta(widget.shipmentId);
+    
+    setState(() => _isLoadingTimeline = true);
+    final events = await ref.read(shipmentProvider.notifier).getTimeline(widget.shipmentId);
+    if (mounted) {
+      setState(() {
+        _timelineEvents = events;
+        _isLoadingTimeline = false;
+      });
+    }
   }
 
   @override
@@ -209,6 +244,40 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                               ),
                               const SizedBox(height: 16),
                               StatusTimeline(currentStatus: shipment.status),
+                              const SizedBox(height: 24),
+                              Text(
+                                'Detailed Logs',
+                                style: GoogleFonts.outfit(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: GarudaColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              if (_isLoadingTimeline)
+                                const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                              else if (_timelineEvents.isEmpty)
+                                Text('No timeline logs found.', style: GoogleFonts.inter(color: GarudaColors.textMuted))
+                              else
+                                ..._timelineEvents.map((e) => Padding(
+                                  padding: const EdgeInsets.only(bottom: 8.0),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.circle, size: 8, color: GarudaColors.primary),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(e.detail, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary)),
+                                            Text(e.timestamp.substring(0, 16).replaceFirst('T', ' '), style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                )),
                             ],
                           ),
                         ),

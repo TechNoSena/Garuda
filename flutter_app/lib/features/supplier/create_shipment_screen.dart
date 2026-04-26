@@ -9,6 +9,8 @@ import '../../core/providers/shipment_provider.dart';
 import '../../core/providers/routing_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/risk_badge.dart';
+import '../../core/services/api_service.dart';
+import '../../core/models/analytics_model.dart';
 import 'compare_modes_screen.dart';
 
 class CreateShipmentScreen extends ConsumerStatefulWidget {
@@ -32,6 +34,10 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   final _destLngCtrl = TextEditingController(text: '86.2007');
 
   TransportMode _selectedMode = TransportMode.roadCar;
+  BillingEstimate? _billingEstimate;
+  bool _isLoadingBilling = false;
+  Map<String, dynamic>? _precheckResult;
+  bool _isLoadingPrecheck = false;
 
   LatLng get _origin => LatLng(
     lat: double.tryParse(_originLatCtrl.text) ?? 22.5436,
@@ -95,6 +101,39 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
       destination: _destination,
       mode: _selectedMode.value,
     );
+  }
+
+  Future<void> _fetchBillingEstimate() async {
+    setState(() => _isLoadingBilling = true);
+    try {
+      final est = await ApiService().getBillingEstimate(
+        origin: _origin,
+        destination: _destination,
+        mode: _selectedMode.value,
+        weightKg: double.tryParse(_weightCtrl.text) ?? 5.0,
+      );
+      if (mounted) setState(() => _billingEstimate = est);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoadingBilling = false);
+    }
+  }
+
+  Future<void> _runPrecheck() async {
+    setState(() => _isLoadingPrecheck = true);
+    try {
+      final res = await ApiService().precheckRoute(
+        sessionId: 'mock-session', // In a real app we'd grab this from routingProvider
+        origin: _origin,
+        destination: _destination,
+        mode: _selectedMode.value,
+        cargoType: 'general',
+      );
+      if (mounted) setState(() => _precheckResult = res);
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _isLoadingPrecheck = false);
+    }
   }
 
   @override
@@ -231,6 +270,84 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoadingPrecheck ? null : _runPrecheck,
+                      icon: _isLoadingPrecheck
+                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.security, size: 18),
+                      label: const Text('Pre-Dispatch Check'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoadingBilling ? null : _fetchBillingEstimate,
+                      icon: _isLoadingBilling
+                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                          : const Icon(Icons.receipt_long, size: 18),
+                      label: const Text('Billing Estimate'),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Precheck result
+              if (_precheckResult != null) ...[
+                const SizedBox(height: 12),
+                GlassmorphicCard(
+                  borderColor: _precheckResult!['safe_to_dispatch'] == true ? GarudaColors.success : GarudaColors.danger,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(_precheckResult!['safe_to_dispatch'] == true ? Icons.check_circle : Icons.warning, 
+                               color: _precheckResult!['safe_to_dispatch'] == true ? GarudaColors.success : GarudaColors.danger),
+                          const SizedBox(width: 8),
+                          Text(
+                            _precheckResult!['safe_to_dispatch'] == true ? 'Safe to Dispatch' : 'Dispatch Warning',
+                            style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
+                          ),
+                        ],
+                      ),
+                      if ((_precheckResult!['alerts'] as List).isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        ...(_precheckResult!['alerts'] as List).map((a) => Text(
+                          "• ${a['detail']}", 
+                          style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textSecondary)
+                        ))
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+
+              // Billing result
+              if (_billingEstimate != null) ...[
+                const SizedBox(height: 12),
+                GlassmorphicCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Estimated Cost', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                      const SizedBox(height: 8),
+                      Text(
+                        '₹${_billingEstimate!.totalEstimatedCostInr.toStringAsFixed(2)}',
+                        style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: GarudaColors.accent),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Base: ₹${_billingEstimate!.breakdown['transport_cost_inr']} | Surcharges: ₹${_billingEstimate!.breakdown['weight_surcharge_inr']} | Carbon Tax: ₹${_billingEstimate!.breakdown['carbon_tax_inr']}',
+                        style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
 
               // Risk result
               if (routeState.riskAnalysis != null) ...[

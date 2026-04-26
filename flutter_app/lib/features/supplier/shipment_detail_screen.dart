@@ -7,6 +7,9 @@ import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/status_timeline.dart';
 import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/loading_shimmer.dart';
+import '../../core/providers/analytics_provider.dart';
+import '../../core/models/analytics_model.dart';
+import '../../core/models/intelligence_model.dart';
 
 class ShipmentDetailScreen extends ConsumerStatefulWidget {
   final String shipmentId;
@@ -17,11 +20,40 @@ class ShipmentDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
+  ExplainableRiskDetails? _riskDetails;
+  PackageIntegrity? _integrity;
+  bool _isLoadingExtra = false;
+
   @override
   void initState() {
     super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
     ref.read(shipmentProvider.notifier).selectShipment(widget.shipmentId);
     ref.read(shipmentProvider.notifier).loadEta(widget.shipmentId);
+  }
+
+  Future<void> _fetchExtraDetails() async {
+    setState(() => _isLoadingExtra = true);
+    final shipment = ref.read(shipmentProvider).selectedShipment;
+    if (shipment != null) {
+      final risk = await ref.read(shipmentProvider.notifier).getRiskDetails(widget.shipmentId);
+      final integrity = await ref.read(analyticsProvider).getPackageIntegrity(
+        widget.shipmentId, 
+        'general', 
+        shipment.weightKg ?? 5.0, 
+        shipment.routeMode,
+      );
+      if (mounted) {
+        setState(() {
+          _riskDetails = risk;
+          _integrity = integrity;
+        });
+      }
+    }
+    if (mounted) setState(() => _isLoadingExtra = false);
   }
 
   @override
@@ -40,10 +72,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh, size: 20),
-            onPressed: () {
-              ref.read(shipmentProvider.notifier).selectShipment(widget.shipmentId);
-              ref.read(shipmentProvider.notifier).loadEta(widget.shipmentId);
-            },
+            onPressed: _load,
           ),
         ],
       ),
@@ -198,6 +227,53 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                           ],
                         ),
                       ),
+
+                      const SizedBox(height: 8),
+
+                      // Extra actions
+                      if (_riskDetails == null && _integrity == null)
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoadingExtra ? null : _fetchExtraDetails,
+                            icon: _isLoadingExtra
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Icon(Icons.analytics_outlined),
+                            label: const Text('Analyze Risk & Integrity'),
+                          ),
+                        ),
+
+                      if (_riskDetails != null) ...[
+                        const SizedBox(height: 8),
+                        GlassmorphicCard(
+                          borderColor: GarudaColors.warning.withValues(alpha: 0.4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Explainable Risk: ${_riskDetails!.riskLevel}', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.warning)),
+                              const SizedBox(height: 4),
+                              Text(_riskDetails!.explanation, style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textPrimary)),
+                              const SizedBox(height: 8),
+                              ..._riskDetails!.factors.map((f) => Text('• ${f.name}: ${f.detail}', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted))),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      if (_integrity != null) ...[
+                        const SizedBox(height: 8),
+                        GlassmorphicCard(
+                          borderColor: GarudaColors.info.withValues(alpha: 0.4),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Package Integrity Score: ${_integrity!.integrityScore}', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.info)),
+                              const SizedBox(height: 8),
+                              ..._integrity!.recommendations.map((r) => Text('• $r', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textPrimary))),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
