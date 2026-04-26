@@ -8,7 +8,6 @@ plugins {
 android {
     namespace = "com.garuda.garuda_app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "25.1.8937393"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
