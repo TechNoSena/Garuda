@@ -38,7 +38,8 @@ class GarudaAppBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: showBack,
       title: Row(
         children: [
-          Text('🦅 ', style: GoogleFonts.inter(fontSize: 22)),
+          Image.asset('garuda_logo.png', width: 26, height: 26),
+          const SizedBox(width: 8),
           Text(title, style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w800, color: textColor)),
           if (role != null) ...[
             const SizedBox(width: 8),

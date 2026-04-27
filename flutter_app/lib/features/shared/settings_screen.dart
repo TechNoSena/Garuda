@@ -178,7 +178,7 @@ class SettingsScreen extends ConsumerWidget {
                 children: [
                   Row(
                     children: [
-                      const Text('🦅', style: TextStyle(fontSize: 24)),
+                      Image.asset('garuda_logo.png', width: 28, height: 28),
                       const SizedBox(width: 10),
                       Text('Project Garuda', style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w800, color: textColor)),
                     ],

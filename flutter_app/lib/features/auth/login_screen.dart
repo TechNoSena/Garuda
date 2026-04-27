@@ -85,18 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                         child: Column(
                           children: [
                             // Logo with bounce
-                            Container(
-                              width: 70,
-                              height: 70,
-                              decoration: BoxDecoration(
-                                color: GarudaColors.primaryDark,
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: GarudaColors.primaryDark, width: 3),
-                              ),
-                              child: const Center(
-                                child: Text('🦅', style: TextStyle(fontSize: 36)),
-                              ),
-                            )
+                            Image.asset('garuda_logo.png', width: 80, height: 80)
                                 .animate(onPlay: (c) => c.repeat(reverse: true))
                                 .moveY(begin: 0, end: -6, duration: 2.seconds, curve: Curves.easeInOut),
                             const SizedBox(height: 14),

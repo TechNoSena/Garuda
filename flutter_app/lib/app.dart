@@ -42,7 +42,7 @@ class _AuthGate extends ConsumerWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🦅', style: TextStyle(fontSize: 48)),
+              Image.asset('garuda_logo.png', width: 64, height: 64),
               const SizedBox(height: 16),
               const CircularProgressIndicator(color: GarudaColors.primary),
             ],
