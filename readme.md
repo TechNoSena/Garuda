@@ -419,5 +419,5 @@ flutter run
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 <div align="center">
-  <i>Built with ❤️ and 🧠 by TechNoSena for the Google Solution Challenge 2026.</i>
+  <i>Built with ❤️ and 🧠 by Team DietCoke for the Google Solution Challenge 2026.</i>
 </div>
