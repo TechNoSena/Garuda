@@ -27,6 +27,10 @@ class TransportMode(str, Enum):
     FLIGHT = "FLIGHT"
     SHIP = "SHIP"
 
+class DeliveryType(str, Enum):
+    RELAY = "RELAY"
+    LAST_MILE = "LAST_MILE"
+
 class ExceptionType(str, Enum):
     DAMAGED = "DAMAGED"
     DELAYED = "DELAYED"
@@ -112,9 +116,12 @@ class CreateShipmentRequest(BaseModel):
     route_mode: TransportMode = TransportMode.ROAD_CAR
     package_description: Optional[str] = None
     weight_kg: Optional[float] = None
+    delivery_type: DeliveryType = DeliveryType.LAST_MILE
+    coupled_shipment_ids: List[str] = Field(default_factory=list, description="IDs of shipments coupled for relay batching")
 
 class AssignShipmentRequest(BaseModel):
     delivery_man_id: str
+    delivery_type: DeliveryType = DeliveryType.LAST_MILE
 
 class UpdateLocationRequest(BaseModel):
     current_location: LatLng

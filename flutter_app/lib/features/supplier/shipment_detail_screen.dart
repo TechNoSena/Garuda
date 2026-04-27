@@ -2,14 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'dart:convert';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/status_timeline.dart';
 import '../../core/widgets/loading_shimmer.dart';
+import '../../core/widgets/live_map_widget.dart';
 import '../../core/providers/analytics_provider.dart';
 import '../../core/models/analytics_model.dart';
 import '../../core/models/intelligence_model.dart';
+import '../../core/models/shipment_model.dart';
+import '../../core/services/api_service.dart';
 
 class ShipmentDetailScreen extends ConsumerStatefulWidget {
   final String shipmentId;
@@ -23,11 +27,44 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
   ExplainableRiskDetails? _riskDetails;
   PackageIntegrity? _integrity;
   bool _isLoadingExtra = false;
+  LatLng? _driverLocation;
+  int? _etaMinutes;
+  double? _remainingKm;
+  bool _isLive = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+      _startSSE();
+    });
+  }
+
+  void _startSSE() {
+    setState(() => _isLive = true);
+    try {
+      ApiService().getLiveTrackingStream(widget.shipmentId).listen(
+        (event) {
+          if (event.data != null && mounted) {
+            try {
+              final data = jsonDecode(event.data!);
+              setState(() {
+                if (data['current_location'] != null) {
+                  _driverLocation = LatLng(
+                    lat: (data['current_location']['lat'] as num).toDouble(),
+                    lng: (data['current_location']['lng'] as num).toDouble(),
+                  );
+                }
+                if (data['eta_minutes'] != null) _etaMinutes = data['eta_minutes'] as int;
+                if (data['remaining_km'] != null) _remainingKm = (data['remaining_km'] as num).toDouble();
+              });
+            } catch (_) {}
+          }
+        },
+        onError: (_) { if (mounted) setState(() => _isLive = false); },
+      );
+    } catch (_) { setState(() => _isLive = false); }
   }
 
   Future<void> _load() async {
@@ -58,6 +95,9 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
     final state = ref.watch(shipmentProvider);
     final shipment = state.selectedShipment;
     final eta = state.currentEta;
@@ -88,6 +128,19 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Live Map for active shipments
+                      if (shipment.status != ShipmentStatus.pending && shipment.status != ShipmentStatus.delivered && shipment.status != ShipmentStatus.cancelled) ...[
+                        LiveMapWidget(
+                          origin: shipment.origin,
+                          destination: shipment.destination,
+                          driverLocation: _driverLocation ?? shipment.currentLocation,
+                          height: 220,
+                          etaDisplay: _etaMinutes != null
+                              ? '${_etaMinutes! ~/ 60}h ${_etaMinutes! % 60}m (~${_remainingKm?.toStringAsFixed(1) ?? '?'} km)'
+                              : (eta != null ? '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m' : null),
+                        ).animate().fadeIn().slideY(begin: 0.1),
+                        const SizedBox(height: 16),
+                      ],
                       // Header Card
                       GlassmorphicCard(
                         padding: const EdgeInsets.all(20),
@@ -114,7 +167,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                         style: GoogleFonts.spaceGrotesk(
                                           fontSize: 18,
                                           fontWeight: FontWeight.w700,
-                                          color: GarudaColors.textPrimary,
+                                          color: textColor,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
@@ -122,7 +175,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                         'ID: ${shipment.shipmentId}',
                                         style: GoogleFonts.inter(
                                           fontSize: 11,
-                                          color: GarudaColors.textMuted,
+                                          color: mutedColor,
                                         ),
                                       ),
                                     ],
@@ -147,11 +200,11 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Origin', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
-                                      Text(shipment.origin.toDisplayString(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                      Text('Origin', style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
+                                      Text(shipment.origin.toDisplayString(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
                                       const SizedBox(height: 14),
-                                      Text('Destination', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
-                                      Text(shipment.destination.toDisplayString(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                      Text('Destination', style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
+                                      Text(shipment.destination.toDisplayString(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
                                     ],
                                   ),
                                 )
@@ -167,7 +220,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                       if (eta != null)
                         GlassmorphicCard(
                           gradient: LinearGradient(
-                            colors: [GarudaColors.card, GarudaColors.cardHover],
+                            colors: [isDark ? GarudaDarkColors.card : GarudaColors.card, isDark ? GarudaDarkColors.cardHover : GarudaColors.cardHover],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),
@@ -187,7 +240,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Time to Destination', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
+                                    Text('Time to Destination', style: GoogleFonts.inter(fontSize: 12, color: mutedColor)),
                                     const SizedBox(height: 2),
                                     Text(
                                       '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m',
@@ -199,8 +252,8 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text('${eta.remainingKm.toStringAsFixed(1)} km', style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
-                                  Text('remaining', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
+                                  Text('${eta.remainingKm.toStringAsFixed(1)} km', style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w600, color: textColor)),
+                                  Text('remaining', style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
                                 ],
                               ),
                             ],
@@ -242,21 +295,21 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                 ],
                               ),
                               const SizedBox(height: 12),
-                              Text(_riskDetails!.explanation, style: GoogleFonts.inter(fontSize: 14, color: GarudaColors.textPrimary)),
+                              Text(_riskDetails!.explanation, style: GoogleFonts.inter(fontSize: 14, color: textColor)),
                               const SizedBox(height: 16),
                               ..._riskDetails!.factors.map((f) => Padding(
                                 padding: const EdgeInsets.only(bottom: 8),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Icon(Icons.circle, size: 6, color: GarudaColors.textMuted),
+                                    Icon(Icons.circle, size: 6, color: mutedColor),
                                     const SizedBox(width: 8),
                                     Expanded(
                                       child: RichText(
                                         text: TextSpan(
-                                          style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary),
+                                          style: GoogleFonts.inter(fontSize: 13, color: isDark ? GarudaDarkColors.textSecondary : GarudaColors.textSecondary),
                                           children: [
-                                            TextSpan(text: '${f.name}: ', style: const TextStyle(fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                            TextSpan(text: '${f.name}: ', style: TextStyle(fontWeight: FontWeight.w600, color: textColor)),
                                             TextSpan(text: f.detail),
                                           ],
                                         ),

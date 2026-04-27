@@ -48,6 +48,10 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
+    final surfaceColor = isDark ? GarudaDarkColors.surfaceLight : GarudaColors.surface;
     final state = ref.watch(routingProvider);
 
     return Scaffold(
@@ -93,13 +97,13 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Straight-line Distance', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
+                                Text('Straight-line Distance', style: GoogleFonts.inter(fontSize: 12, color: mutedColor)),
                                 Text(
                                   '${state.comparison!.straightLineKm.toStringAsFixed(1)} km',
                                   style: GoogleFonts.spaceGrotesk(
                                     fontSize: 18,
                                     fontWeight: FontWeight.w700,
-                                    color: GarudaColors.textPrimary,
+                                    color: textColor,
                                   ),
                                 ),
                               ],
@@ -116,11 +120,11 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _sortChip('Fastest', 'fastest', Icons.speed),
+                            _sortChip('Fastest', 'fastest', Icons.speed, isDark, textColor, mutedColor, surfaceColor),
                             const SizedBox(width: 12),
-                            _sortChip('Cheapest', 'cheapest', Icons.currency_rupee),
+                            _sortChip('Cheapest', 'cheapest', Icons.currency_rupee, isDark, textColor, mutedColor, surfaceColor),
                             const SizedBox(width: 12),
-                            _sortChip('Greenest', 'greenest', Icons.eco),
+                            _sortChip('Greenest', 'greenest', Icons.eco, isDark, textColor, mutedColor, surfaceColor),
                           ],
                         ),
                       ).animate().fadeIn(delay: 100.ms),
@@ -135,7 +139,7 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
 
                         return GlassmorphicCard(
                           borderColor: isFirst ? tm.color.withValues(alpha: 0.5) : null,
-                          gradient: isFirst ? LinearGradient(colors: [GarudaColors.card, tm.color.withValues(alpha: 0.05)]) : null,
+                          gradient: isFirst ? LinearGradient(colors: [isDark ? GarudaDarkColors.card : GarudaColors.card, tm.color.withValues(alpha: 0.05)]) : null,
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,13 +166,13 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
                                           style: GoogleFonts.spaceGrotesk(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w700,
-                                            color: GarudaColors.textPrimary,
+                                            color: textColor,
                                           ),
                                         ),
                                         Text(
                                           '${mode.distanceKm.toStringAsFixed(1)} km routed',
                                           style: GoogleFonts.inter(
-                                            fontSize: 12, color: GarudaColors.textMuted,
+                                            fontSize: 12, color: mutedColor,
                                           ),
                                         ),
                                       ],
@@ -196,11 +200,11 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  Expanded(child: _metricBox('⏱ Duration', mode.durationDisplay, GarudaColors.info)),
+                                  Expanded(child: _metricBox('⏱ Duration', mode.durationDisplay, GarudaColors.info, isDark, surfaceColor)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _metricBox('💰 Cost', mode.costDisplay, GarudaColors.warning)),
+                                  Expanded(child: _metricBox('💰 Cost', mode.costDisplay, GarudaColors.warning, isDark, surfaceColor)),
                                   const SizedBox(width: 12),
-                                  Expanded(child: _metricBox('🌿 CO₂', mode.co2Display, GarudaColors.success)),
+                                  Expanded(child: _metricBox('🌿 CO₂', mode.co2Display, GarudaColors.success, isDark, surfaceColor)),
                                 ],
                               ),
                             ],
@@ -215,7 +219,7 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
     );
   }
 
-  Widget _sortChip(String label, String value, IconData icon) {
+  Widget _sortChip(String label, String value, IconData icon, bool isDark, Color textColor, Color mutedColor, Color surfaceColor) {
     final selected = _sortBy == value;
     return GestureDetector(
       onTap: () => setState(() => _sortBy = value),
@@ -223,24 +227,24 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? GarudaColors.primary.withValues(alpha: 0.15) : GarudaColors.surfaceLight,
+          color: selected ? GarudaColors.primary.withValues(alpha: 0.15) : surfaceColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected ? GarudaColors.primary : GarudaColors.glassBorder,
+            color: selected ? GarudaColors.primary : (isDark ? GarudaDarkColors.glassBorder : GarudaColors.glassBorder),
             width: selected ? 1.5 : 1.0,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: selected ? GarudaColors.primaryLight : GarudaColors.textMuted),
+            Icon(icon, size: 16, color: selected ? GarudaColors.primaryLight : mutedColor),
             const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-                color: selected ? GarudaColors.textPrimary : GarudaColors.textMuted,
+                color: selected ? textColor : mutedColor,
               ),
             ),
           ],
@@ -249,13 +253,13 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
     );
   }
 
-  Widget _metricBox(String label, String value, Color color) {
+  Widget _metricBox(String label, String value, Color color, bool isDark, Color surfaceColor) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
       decoration: BoxDecoration(
-        color: GarudaColors.surfaceLight,
+        color: surfaceColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: GarudaColors.glassBorder, width: 0.5),
+        border: Border.all(color: isDark ? GarudaDarkColors.glassBorder : GarudaColors.glassBorder, width: 0.5),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -265,7 +269,7 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
             style: GoogleFonts.inter(
               fontSize: 11,
               fontWeight: FontWeight.w500,
-              color: GarudaColors.textMuted,
+              color: isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted,
             ),
           ),
           const SizedBox(height: 4),

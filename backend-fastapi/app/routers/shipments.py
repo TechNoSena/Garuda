@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from app.models import (
     CreateShipmentRequest, AssignShipmentRequest, 
     UpdateLocationRequest, ShipmentStatus, EtaRequest,
-    ExceptionRequest, ReportIncidentRequest
+    ExceptionRequest, ReportIncidentRequest, DeliveryType
 )
 from app.services import firebase_service
 
@@ -46,7 +46,10 @@ async def list_by_user(user_id: str, role: str = Query(..., description="SUPPLIE
               description="Logistics partner assigns a delivery man to the shipment")
 async def assign_shipment(shipment_id: str, req: AssignShipmentRequest):
     try:
-        return firebase_service.update_shipment_status(shipment_id, ShipmentStatus.ASSIGNED, req.delivery_man_id)
+        return firebase_service.update_shipment_status(
+            shipment_id, ShipmentStatus.ASSIGNED, req.delivery_man_id,
+            delivery_type=req.delivery_type.value if hasattr(req, 'delivery_type') else None
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -79,29 +82,91 @@ async def live_tracking(shipment_id: str):
     import random
     
     async def event_generator():
-        # Base coordinates (simulated movement along a route)
-        base_lat = 22.543610
-        base_lng = 85.796856
-        dest_lat = 22.768116
-        dest_lng = 86.200684
+        from datetime import datetime, timezone
+        from app.services.routing_strategy import calculate_haversine
         
-        for i in range(5):  # Send 5 events then close
-            progress = (i + 1) / 5
-            current_lat = round(base_lat + (dest_lat - base_lat) * progress + random.uniform(-0.002, 0.002), 6)
-            current_lng = round(base_lng + (dest_lng - base_lng) * progress + random.uniform(-0.002, 0.002), 6)
+        # Try to read real data from Firestore
+        shipment_data = None
+        try:
+            from app.config import db as firestore_db
+            if firestore_db:
+                doc = firestore_db.collection("shipments").document(shipment_id).get()
+                if doc.exists:
+                    shipment_data = doc.to_dict()
+        except Exception:
+            pass
+        
+        if shipment_data and shipment_data.get("current_location"):
+            # Real mode: read actual location from Firestore
+            from app.models import LatLng
+            dest = LatLng(**shipment_data["destination"])
+            speed_map = {"ROAD_CAR": 50, "ROAD_BIKE": 35, "RAIL": 80, "FLIGHT": 800, "SHIP": 40}
+            mode = shipment_data.get("route_mode", "ROAD_CAR")
+            speed = speed_map.get(mode, 50)
             
-            from datetime import datetime, timezone
-            event_data = {
-                "shipment_id": shipment_id,
-                "location": {"lat": current_lat, "lng": current_lng},
-                "speed_kmh": round(random.uniform(30, 70), 1),
-                "heading_degrees": round(random.uniform(0, 360), 1),
-                "progress_pct": round(progress * 100, 1),
-                "timestamp": datetime.now(timezone.utc).isoformat(),
-                "event_index": i + 1
-            }
-            yield f"data: {json.dumps(event_data)}\n\n"
-            await asyncio.sleep(1)  # 1 second for testing (3s in production)
+            for i in range(10):  # Stream for 10 cycles (30 seconds total)
+                try:
+                    doc = firestore_db.collection("shipments").document(shipment_id).get()
+                    if doc.exists:
+                        fresh = doc.to_dict()
+                        curr = LatLng(**fresh["current_location"])
+                        dist_km = calculate_haversine(curr, dest)
+                        eta_mins = round((dist_km / speed) * 60)
+                        
+                        # Proactive risk check for 1-2hr window
+                        risk_alert = None
+                        if i % 3 == 0:  # Check every 3rd cycle
+                            try:
+                                from app.services.gemini_service import analyze_route_risk
+                                risk = analyze_route_risk(curr, dest, mode, {"duration": f"{eta_mins*60}s", "distanceMeters": int(dist_km*1000)})
+                                if risk.get("risk_score", 0) > 60:
+                                    risk_alert = {"type": "WARNING", "message": risk.get("heads_up", "Potential disruption ahead"), "risk_score": risk.get("risk_score")}
+                            except Exception:
+                                pass
+                        
+                        event_data = {
+                            "shipment_id": shipment_id,
+                            "status": fresh["status"],
+                            "current_location": fresh["current_location"],
+                            "speed_kmh": speed,
+                            "remaining_km": round(dist_km, 2),
+                            "eta_minutes": eta_mins,
+                            "progress_pct": round(max(0, min(100, (1 - dist_km / max(calculate_haversine(LatLng(**fresh["origin"]), dest), 0.1)) * 100)), 1),
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "event_index": i + 1
+                        }
+                        if risk_alert:
+                            event_data["risk_alert"] = risk_alert
+                        
+                        yield f"data: {json.dumps(event_data)}\n\n"
+                except Exception:
+                    pass
+                await asyncio.sleep(3)
+        else:
+            # Fallback: simulated movement for demo
+            base_lat = 22.543610
+            base_lng = 85.796856
+            dest_lat = 22.768116
+            dest_lng = 86.200684
+            
+            for i in range(5):
+                progress = (i + 1) / 5
+                current_lat = round(base_lat + (dest_lat - base_lat) * progress + random.uniform(-0.002, 0.002), 6)
+                current_lng = round(base_lng + (dest_lng - base_lng) * progress + random.uniform(-0.002, 0.002), 6)
+                
+                event_data = {
+                    "shipment_id": shipment_id,
+                    "status": "IN_TRANSIT",
+                    "current_location": {"lat": current_lat, "lng": current_lng},
+                    "speed_kmh": round(random.uniform(30, 70), 1),
+                    "remaining_km": round((1 - progress) * 45, 2),
+                    "eta_minutes": round((1 - progress) * 54),
+                    "progress_pct": round(progress * 100, 1),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                    "event_index": i + 1
+                }
+                yield f"data: {json.dumps(event_data)}\n\n"
+                await asyncio.sleep(1)
         
         yield f"data: {json.dumps({'status': 'STREAM_COMPLETE', 'shipment_id': shipment_id})}\n\n"
     

@@ -61,6 +61,17 @@ class ShipmentNotifier extends StateNotifier<ShipmentState> {
     }
   }
 
+  /// Consumer-specific: load all shipments by consumer email
+  Future<void> loadConsumerShipments(String email) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final shipments = await _api.listShipmentsByUser(email, 'CONSUMER');
+      state = state.copyWith(shipments: shipments, isLoading: false);
+    } catch (e) {
+      state = state.copyWith(error: e.toString(), isLoading: false);
+    }
+  }
+
   Future<Shipment?> createShipment({
     required String supplierId,
     required String logisticsId,

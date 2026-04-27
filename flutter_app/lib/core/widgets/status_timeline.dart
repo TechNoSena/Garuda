@@ -10,6 +10,10 @@ class StatusTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
+    final surfaceColor = isDark ? GarudaDarkColors.surfaceLight : GarudaColors.surfaceLight;
     final lifecycle = ShipmentStatus.lifecycle;
     final currentIndex = currentStatus.lifecycleIndex;
 
@@ -23,7 +27,6 @@ class StatusTimeline extends StatelessWidget {
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Timeline dot and line
             SizedBox(
               width: 24,
               child: Column(
@@ -33,36 +36,26 @@ class StatusTimeline extends StatelessWidget {
                     height: isCurrent ? 16 : 12,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isCompleted
-                          ? GarudaColors.primary
-                          : GarudaColors.surfaceLight,
-                      border: isCurrent
-                          ? Border.all(color: GarudaColors.accent, width: 2)
-                          : null,
+                      color: isCompleted ? GarudaColors.primary : surfaceColor,
+                      border: isCurrent ? Border.all(color: GarudaColors.accent, width: 2) : null,
                       boxShadow: isCurrent
-                          ? [BoxShadow(
-                              color: GarudaColors.accent.withValues(alpha: 0.4),
-                              blurRadius: 8,
-                            )]
+                          ? [BoxShadow(color: GarudaColors.accent.withValues(alpha: 0.4), blurRadius: 8)]
                           : null,
                     ),
                     child: isCompleted && !isCurrent
-                        ? const Icon(Icons.check, size: 8, color: GarudaColors.background)
+                        ? const Icon(Icons.check, size: 8, color: Colors.white)
                         : null,
                   ),
                   if (!isLast)
                     Container(
                       width: 2,
                       height: 32,
-                      color: isCompleted
-                          ? GarudaColors.primary.withValues(alpha: 0.6)
-                          : GarudaColors.surfaceLight,
+                      color: isCompleted ? GarudaColors.primary.withValues(alpha: 0.6) : surfaceColor,
                     ),
                 ],
               ),
             ),
             const SizedBox(width: 12),
-            // Label
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(bottom: isLast ? 0 : 20),
@@ -73,21 +66,12 @@ class StatusTimeline extends StatelessWidget {
                       '${status.emoji} ${status.label}',
                       style: GoogleFonts.inter(
                         fontSize: 13,
-                        fontWeight: isCurrent ? FontWeight.w600 : FontWeight.w400,
-                        color: isCompleted
-                            ? GarudaColors.textPrimary
-                            : GarudaColors.textMuted,
+                        fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w400,
+                        color: isCompleted ? textColor : mutedColor,
                       ),
                     ),
                     if (isCurrent)
-                      Text(
-                        'Current Status',
-                        style: GoogleFonts.inter(
-                          fontSize: 11,
-                          color: GarudaColors.accent,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                      Text('Current Status', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.accent, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -106,22 +90,14 @@ class StatusChip extends StatelessWidget {
 
   Color get _color {
     switch (status) {
-      case ShipmentStatus.pending:
-        return GarudaColors.textMuted;
-      case ShipmentStatus.assigned:
-        return GarudaColors.info;
-      case ShipmentStatus.dispatched:
-        return GarudaColors.modeBike;
-      case ShipmentStatus.inTransit:
-        return GarudaColors.warning;
-      case ShipmentStatus.outForDelivery:
-        return GarudaColors.modeFlight;
-      case ShipmentStatus.delivered:
-        return GarudaColors.success;
-      case ShipmentStatus.cancelled:
-        return GarudaColors.danger;
-      case ShipmentStatus.exception:
-        return GarudaColors.danger;
+      case ShipmentStatus.pending: return GarudaColors.textMuted;
+      case ShipmentStatus.assigned: return GarudaColors.info;
+      case ShipmentStatus.dispatched: return GarudaColors.modeBike;
+      case ShipmentStatus.inTransit: return GarudaColors.warning;
+      case ShipmentStatus.outForDelivery: return GarudaColors.modeFlight;
+      case ShipmentStatus.delivered: return GarudaColors.success;
+      case ShipmentStatus.cancelled: return GarudaColors.danger;
+      case ShipmentStatus.exception: return GarudaColors.danger;
     }
   }
 
@@ -132,16 +108,9 @@ class StatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: _color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: _color.withValues(alpha: 0.4)),
+        border: Border.all(color: _color, width: 2),
       ),
-      child: Text(
-        status.label,
-        style: GoogleFonts.inter(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: _color,
-        ),
-      ),
+      child: Text(status.label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: _color)),
     );
   }
 }

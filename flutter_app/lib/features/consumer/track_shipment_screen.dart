@@ -5,14 +5,16 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
+import '../../core/widgets/funky_box.dart';
 import '../../core/widgets/status_timeline.dart';
 import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/loading_shimmer.dart';
+import '../../core/widgets/live_map_widget.dart';
+import '../../core/models/shipment_model.dart';
 import '../../core/models/intelligence_model.dart';
 import 'dart:convert';
 import 'package:flutter_client_sse/flutter_client_sse.dart';
 import '../../core/services/api_service.dart';
-import '../../core/models/analytics_model.dart';
 import '../../core/widgets/shared_widgets.dart';
 import '../shared/chat_screen.dart';
 
@@ -27,6 +29,12 @@ class TrackShipmentScreen extends ConsumerStatefulWidget {
 class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
   List<TimelineEvent> _timelineEvents = [];
   bool _isLoadingTimeline = false;
+  Map<String, dynamic>? _liveData; // Retained for SSE event access
+  bool _isLive = false;
+  LatLng? _driverLocation;
+  int? _etaMinutes;
+  double? _remainingKm;
+  String? _riskAlertMessage;
   
   @override
   void initState() {
@@ -38,14 +46,40 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
   }
 
   void _startSSE() {
-    ApiService().getLiveTrackingStream(widget.shipmentId).listen((event) {
-      if (event.data != null && mounted) {
-        try {
-          final data = jsonDecode(event.data!);
-          // Update live map
-        } catch (_) {}
-      }
-    });
+    setState(() => _isLive = true);
+    ApiService().getLiveTrackingStream(widget.shipmentId).listen(
+      (event) {
+        if (event.data != null && mounted) {
+          try {
+            final data = jsonDecode(event.data!);
+            setState(() {
+              _liveData = data as Map<String, dynamic>;
+              // Extract driver location from SSE
+              if (data['current_location'] != null) {
+                _driverLocation = LatLng(
+                  lat: (data['current_location']['lat'] as num).toDouble(),
+                  lng: (data['current_location']['lng'] as num).toDouble(),
+                );
+              }
+              // Extract ETA
+              if (data['eta_minutes'] != null) {
+                _etaMinutes = data['eta_minutes'] as int;
+              }
+              if (data['remaining_km'] != null) {
+                _remainingKm = (data['remaining_km'] as num).toDouble();
+              }
+              // Check for risk alerts
+              if (data['risk_alert'] != null) {
+                _riskAlertMessage = data['risk_alert']['message'];
+              }
+            });
+          } catch (_) {}
+        }
+      },
+      onError: (_) {
+        if (mounted) setState(() => _isLive = false);
+      },
+    );
   }
 
   @override
@@ -70,18 +104,42 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
     final state = ref.watch(shipmentProvider);
     final shipment = state.selectedShipment;
     final eta = state.currentEta;
 
+    // Compute ETA display from SSE or provider
+    String? etaDisplay;
+    if (_etaMinutes != null) {
+      etaDisplay = '${_etaMinutes! ~/ 60}h ${_etaMinutes! % 60}m';
+      if (_remainingKm != null) etaDisplay += ' (~${_remainingKm!.toStringAsFixed(1)} km)';
+    } else if (eta != null) {
+      etaDisplay = '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m (~${eta.remainingKm.toStringAsFixed(1)} km)';
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Track Package', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text('Track Package', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w800)),
+        leading: IconButton(icon: const Icon(Icons.arrow_back_ios, size: 18), onPressed: () => Navigator.pop(context)),
         actions: [
+          if (_isLive)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8, height: 8,
+                    decoration: const BoxDecoration(color: GarudaColors.danger, shape: BoxShape.circle),
+                  ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(begin: const Offset(1, 1), end: const Offset(1.5, 1.5), duration: 800.ms),
+                  const SizedBox(width: 4),
+                  Text('LIVE', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800, color: GarudaColors.danger)),
+                ],
+              ),
+            ),
           IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _load),
         ],
       ),
@@ -92,48 +150,49 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
               : RefreshIndicator(
                   onRefresh: () async => _load(),
                   color: GarudaColors.consumerColor,
-                  backgroundColor: GarudaColors.card,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ETA hero
-                        if (eta != null)
-                          GlassmorphicCard(
-                            gradient: LinearGradient(
-                              colors: [GarudaColors.card, GarudaColors.cardHover],
-                            ),
-                            borderColor: GarudaColors.consumerColor.withValues(alpha: 0.5),
-                            child: Column(
+                        // In-App Google Maps — Live driver tracking for consumer
+                        LiveMapWidget(
+                          origin: shipment.origin,
+                          destination: shipment.destination,
+                          driverLocation: _driverLocation ?? shipment.currentLocation,
+                          height: 240,
+                          etaDisplay: etaDisplay,
+                        ).animate().fadeIn().slideY(begin: 0.1),
+
+                        const SizedBox(height: 16),
+
+                        // Risk alert from proactive monitoring
+                        if (_riskAlertMessage != null)
+                          FunkyBox.pill(
+                            color: GarudaColors.warning.withValues(alpha: 0.15),
+                            padding: const EdgeInsets.all(14),
+                            child: Row(
                               children: [
-                                Text(
-                                  'Estimated Arrival',
-                                  style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m',
-                                  style: GoogleFonts.spaceGrotesk(
-                                    fontSize: 42,
-                                    fontWeight: FontWeight.w700,
-                                    color: GarudaColors.primaryLight,
+                                const Icon(Icons.info_outline, color: GarudaColors.warning, size: 24),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Route Advisory', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: GarudaColors.warning)),
+                                      const SizedBox(height: 2),
+                                      Text(_riskAlertMessage!, style: GoogleFonts.inter(fontSize: 12, color: textColor)),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${eta.remainingKm.toStringAsFixed(1)} km remaining',
-                                  style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
                                 ),
                               ],
                             ),
-                          ).animate().fadeIn().slideY(begin: 0.1),
+                          ).animate().fadeIn(),
 
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         const SectionHeader(title: 'Package Information'),
 
-                        // Shipment info
                         GlassmorphicCard(
                           padding: const EdgeInsets.all(16),
                           child: Column(
@@ -144,8 +203,9 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
-                                      color: GarudaColors.surfaceLight,
+                                      color: isDark ? GarudaDarkColors.surfaceLight : GarudaColors.surfaceLight,
                                       borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: GarudaColors.primaryDark, width: 2),
                                     ),
                                     child: modeIconFromString(shipment.routeMode, size: 24),
                                   ),
@@ -156,17 +216,10 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                                       children: [
                                         Text(
                                           shipment.packageDescription ?? 'Garuda Package',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                            color: GarudaColors.textPrimary,
-                                          ),
+                                          style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
                                         ),
                                         if (shipment.weightKg != null)
-                                          Text(
-                                            '${shipment.weightKg} kg',
-                                            style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted),
-                                          ),
+                                          Text('${shipment.weightKg} kg', style: GoogleFonts.inter(fontSize: 12, color: mutedColor)),
                                       ],
                                     ),
                                   ),
@@ -178,19 +231,16 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                               InfoRow(label: 'Tracking ID', value: shipment.shipmentId),
                               InfoRow(label: 'From', value: shipment.origin.toDisplayString()),
                               InfoRow(label: 'To', value: shipment.destination.toDisplayString()),
-                              if (shipment.currentLocation != null)
-                                InfoRow(label: 'Current', value: shipment.currentLocation!.toDisplayString(), valueColor: GarudaColors.warning),
+                              if (_driverLocation != null)
+                                InfoRow(label: 'Driver At', value: _driverLocation!.toDisplayString(), valueColor: GarudaColors.warning),
                             ],
                           ),
                         ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
                         const SizedBox(height: 24),
 
-                        // Timeline
                         const SectionHeader(title: 'Delivery Progress'),
-                        GlassmorphicCard(
-                          child: StatusTimeline(currentStatus: shipment.status),
-                        ).animate().fadeIn(delay: 200.ms),
+                        GlassmorphicCard(child: StatusTimeline(currentStatus: shipment.status)).animate().fadeIn(delay: 200.ms),
 
                         const SizedBox(height: 24),
                         
@@ -200,7 +250,7 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                           child: _isLoadingTimeline
                             ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
                             : _timelineEvents.isEmpty
-                              ? Center(child: Text('No timeline logs found.', style: GoogleFonts.inter(color: GarudaColors.textMuted)))
+                              ? Center(child: Text('No timeline logs found.', style: GoogleFonts.inter(color: mutedColor)))
                               : Column(
                                   children: _timelineEvents.map((e) => Padding(
                                     padding: const EdgeInsets.only(bottom: 12.0),
@@ -209,21 +259,17 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                                       children: [
                                         Container(
                                           margin: const EdgeInsets.only(top: 4),
-                                          width: 8,
-                                          height: 8,
-                                          decoration: const BoxDecoration(
-                                            color: GarudaColors.primaryLight,
-                                            shape: BoxShape.circle,
-                                          ),
+                                          width: 8, height: 8,
+                                          decoration: const BoxDecoration(color: GarudaColors.primary, shape: BoxShape.circle),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              Text(e.detail, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary)),
+                                              Text(e.detail, style: GoogleFonts.inter(fontSize: 13, color: textColor)),
                                               const SizedBox(height: 2),
-                                              Text(e.timestamp.substring(0, 16).replaceFirst('T', ' '), style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
+                                              Text(e.timestamp.substring(0, 16).replaceFirst('T', ' '), style: GoogleFonts.inter(fontSize: 11, color: mutedColor)),
                                             ],
                                           ),
                                         ),
@@ -240,15 +286,10 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                 ),
       floatingActionButton: shipment != null
           ? FloatingActionButton.extended(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => ChatScreen(shipmentId: shipment.shipmentId)),
-                );
-              },
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(shipmentId: shipment.shipmentId))),
               backgroundColor: GarudaColors.primary,
-              icon: const Icon(Icons.chat_bubble_outline, color: GarudaColors.background),
-              label: Text("Secure Chat", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: GarudaColors.background)),
+              icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+              label: Text("Secure Chat", style: GoogleFonts.outfit(fontWeight: FontWeight.w700, color: Colors.white)),
             )
           : null,
     );

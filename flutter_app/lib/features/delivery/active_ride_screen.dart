@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:async';
+import 'dart:convert';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/providers/routing_provider.dart';
@@ -13,9 +16,11 @@ import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/loading_shimmer.dart';
 import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/risk_badge.dart';
+import '../../core/widgets/funky_box.dart';
+import '../../core/widgets/live_map_widget.dart';
+import '../../core/models/shipment_model.dart';
 import '../../core/models/risk_model.dart';
-import '../../core/models/routing_model.dart';
-import '../../core/models/intelligence_model.dart';
+import '../../core/services/api_service.dart';
 import '../shared/chat_screen.dart';
 
 class ActiveRideScreen extends ConsumerStatefulWidget {
@@ -27,6 +32,13 @@ class ActiveRideScreen extends ConsumerStatefulWidget {
 }
 
 class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
+  Timer? _locationTimer;
+  Timer? _monitorTimer;
+  Map<String, dynamic>? _lastLiveData;
+  bool _isStreamingLocation = false;
+  LatLng? _driverGpsLocation;
+  String? _riskAlertMessage;
+
   @override
   void initState() {
     super.initState();
@@ -47,10 +59,110 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       mode: shipment.routeMode,
       shipmentId: widget.shipmentId,
     );
+
+    // Start live location streaming + real GPS capture
+    _startLiveTracking();
+    _startRealGps();
+    _startProactiveMonitor();
+  }
+
+  /// Capture real GPS from device every 2 minutes and push to backend
+  Future<void> _startRealGps() async {
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+        return; // Fall back to SSE data
+      }
+
+      // Capture initial position
+      await _captureAndPushGps();
+
+      // Periodic GPS capture every 2 minutes
+      _locationTimer = Timer.periodic(const Duration(minutes: 2), (_) {
+        _captureAndPushGps();
+      });
+    } catch (_) {
+      // GPS not available — fall back to SSE-only tracking
+    }
+  }
+
+  Future<void> _captureAndPushGps() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, timeLimit: Duration(seconds: 10)),
+      );
+      final loc = LatLng(lat: position.latitude, lng: position.longitude);
+      setState(() => _driverGpsLocation = loc);
+
+      // Push to backend
+      await ApiService().updateShipmentLocation(widget.shipmentId, loc);
+    } catch (_) {}
+  }
+
+  /// Proactive monitor: every 10 minutes check for 1-2 hour window risks
+  void _startProactiveMonitor() {
+    _monitorTimer = Timer.periodic(const Duration(minutes: 10), (_) async {
+      final shipment = ref.read(shipmentProvider).selectedShipment;
+      if (shipment == null) return;
+      try {
+        final sessionId = await ref.read(routingProvider.notifier).ensureSession();
+        final response = await ApiService().monitorRide(
+          sessionId: sessionId,
+          currentLocation: _driverGpsLocation ?? shipment.currentLocation ?? shipment.origin,
+          destination: shipment.destination,
+          mode: shipment.routeMode,
+          shipmentId: widget.shipmentId,
+        );
+        if (mounted && response.isRerouteNeeded) {
+          setState(() => _riskAlertMessage = response.displayMessage);
+        }
+      } catch (_) {}
+    });
+  }
+
+  void _startLiveTracking() {
+    setState(() => _isStreamingLocation = true);
+    
+    // Listen to SSE live stream
+    try {
+      ApiService().getLiveTrackingStream(widget.shipmentId).listen(
+        (event) {
+          if (event.data != null && mounted) {
+            try {
+              final data = jsonDecode(event.data!);
+              setState(() {
+                _lastLiveData = data as Map<String, dynamic>;
+                // Update driver location from SSE if no real GPS
+                if (_driverGpsLocation == null && data['current_location'] != null) {
+                  _driverGpsLocation = LatLng(
+                    lat: (data['current_location']['lat'] as num).toDouble(),
+                    lng: (data['current_location']['lng'] as num).toDouble(),
+                  );
+                }
+                // Check for risk alerts from SSE
+                if (data['risk_alert'] != null) {
+                  _riskAlertMessage = data['risk_alert']['message'];
+                }
+              });
+            } catch (_) {}
+          }
+        },
+        onError: (_) {
+          if (mounted) setState(() => _isStreamingLocation = false);
+        },
+      );
+    } catch (_) {
+      setState(() => _isStreamingLocation = false);
+    }
   }
 
   @override
   void dispose() {
+    _locationTimer?.cancel();
+    _monitorTimer?.cancel();
     super.dispose();
   }
 
@@ -61,9 +173,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: GarudaColors.background),
+              const Icon(Icons.check_circle, color: Colors.white),
               const SizedBox(width: 8),
-              Text('Status updated to $status', style: GoogleFonts.inter(color: GarudaColors.background)),
+              Text('Status updated to $status', style: GoogleFonts.inter(color: Colors.white)),
             ],
           ),
           backgroundColor: GarudaColors.success,
@@ -89,28 +201,54 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
     final shipState = ref.watch(shipmentProvider);
     final monState = ref.watch(monitorProvider);
     final shipment = shipState.selectedShipment;
 
+    // Compute ETA display from SSE data
+    String? etaDisplay;
+    if (_lastLiveData != null && _lastLiveData!['eta_minutes'] != null) {
+      final mins = _lastLiveData!['eta_minutes'] as int;
+      etaDisplay = '${mins ~/ 60}h ${mins % 60}m (~${_lastLiveData!['remaining_km']} km)';
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Active Ride', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700)),
+        title: Text('Active Ride', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w800)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () {
             ref.read(monitorProvider.notifier).stopMonitoring();
+            _locationTimer?.cancel();
+            _monitorTimer?.cancel();
             Navigator.pop(context);
           },
         ),
         actions: [
+          // Live indicator
+          if (_isStreamingLocation)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8, height: 8,
+                    decoration: const BoxDecoration(color: GarudaColors.danger, shape: BoxShape.circle),
+                  ).animate(onPlay: (c) => c.repeat(reverse: true)).scale(
+                    begin: const Offset(1, 1), end: const Offset(1.5, 1.5), duration: 800.ms,
+                  ),
+                  const SizedBox(width: 4),
+                  Text('LIVE', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w800, color: GarudaColors.danger)),
+                ],
+              ),
+            ),
           IconButton(
-            icon: const Icon(Icons.chat_bubble_outline, color: GarudaColors.primaryLight),
+            icon: const Icon(Icons.chat_bubble_outline, color: GarudaColors.primary),
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => ChatScreen(shipmentId: widget.shipmentId, driverName: "Consumer")),
-              );
+              Navigator.push(context, MaterialPageRoute(builder: (_) => ChatScreen(shipmentId: widget.shipmentId, driverName: "Consumer")));
             },
           ),
         ],
@@ -122,14 +260,20 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // In-App Google Maps — Live Tracking
+                  LiveMapWidget(
+                    origin: shipment.origin,
+                    destination: shipment.destination,
+                    driverLocation: _driverGpsLocation ?? shipment.currentLocation,
+                    height: 260,
+                    etaDisplay: etaDisplay,
+                  ).animate().fadeIn().slideY(begin: 0.1),
+
+                  const SizedBox(height: 16),
+
                   // Header
                   GlassmorphicCard(
                     padding: const EdgeInsets.all(20),
-                    gradient: LinearGradient(
-                      colors: [GarudaColors.card, GarudaColors.cardHover],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -138,8 +282,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                gradient: GarudaGradients.delivery,
+                                color: GarudaColors.deliveryColor,
                                 borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: GarudaColors.primaryDark, width: 2),
                               ),
                               child: modeIconFromString(shipment.routeMode, size: 24),
                             ),
@@ -150,19 +295,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                                 children: [
                                   Text(
                                     shipment.packageDescription ?? 'Delivery',
-                                    style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w700, color: GarudaColors.textPrimary),
+                                    style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.w800, color: textColor),
                                   ),
                                   const SizedBox(height: 4),
-                                  StatusBadge(label: shipment.status.label, color: GarudaColors.primaryLight),
+                                  StatusBadge(label: shipment.status.label, color: GarudaColors.primary),
                                 ],
                               ),
                             ),
                             IconButton(
                               onPressed: _openNavigation,
-                              style: IconButton.styleFrom(
-                                backgroundColor: GarudaColors.primary.withValues(alpha: 0.15),
-                              ),
-                              icon: const Icon(Icons.navigation, color: GarudaColors.primaryLight),
+                              style: IconButton.styleFrom(backgroundColor: GarudaColors.primary.withValues(alpha: 0.15)),
+                              icon: const Icon(Icons.navigation, color: GarudaColors.primary),
                             ),
                           ],
                         ),
@@ -171,17 +314,15 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                         InfoRow(label: 'Destination', value: shipment.destination.toDisplayString()),
                       ],
                     ),
-                  ).animate().fadeIn().slideY(begin: 0.1),
+                  ).animate().fadeIn(delay: 50.ms).slideY(begin: 0.1),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  // Monitor alerts
-                  if (monState.lastResponse?.isRerouteNeeded == true)
-                    GlassmorphicCard(
-                      borderColor: GarudaColors.danger.withValues(alpha: 0.5),
-                      gradient: LinearGradient(
-                        colors: [GarudaColors.danger.withValues(alpha: 0.15), GarudaColors.card],
-                      ),
+                  // Proactive Risk Alert
+                  if (_riskAlertMessage != null)
+                    FunkyBox.pill(
+                      color: GarudaColors.danger.withValues(alpha: 0.15),
+                      padding: const EdgeInsets.all(16),
                       child: Row(
                         children: [
                           const Icon(Icons.warning_amber, color: GarudaColors.danger, size: 32),
@@ -190,15 +331,32 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'REROUTE SUGGESTED',
-                                  style: GoogleFonts.spaceGrotesk(fontSize: 16, fontWeight: FontWeight.w700, color: GarudaColors.danger),
-                                ),
+                                Text('⚠️ UPCOMING RISK (1-2hr)', style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.w800, color: GarudaColors.danger)),
                                 const SizedBox(height: 4),
-                                Text(
-                                  monState.lastResponse!.displayMessage,
-                                  style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary),
-                                ),
+                                Text(_riskAlertMessage!, style: GoogleFonts.inter(fontSize: 13, color: textColor)),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn().shakeX(amount: 2),
+
+                  // Monitor alerts
+                  if (monState.lastResponse?.isRerouteNeeded == true)
+                    FunkyBox.pill(
+                      color: GarudaColors.danger.withValues(alpha: 0.15),
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber, color: GarudaColors.danger, size: 32),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('REROUTE SUGGESTED', style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.w800, color: GarudaColors.danger)),
+                                const SizedBox(height: 4),
+                                Text(monState.lastResponse!.displayMessage, style: GoogleFonts.inter(fontSize: 13, color: textColor)),
                               ],
                             ),
                           ),
@@ -207,16 +365,13 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     ).animate().fadeIn().slideX()
                   else if (monState.lastResponse?.isOnTrack == true)
                     GlassmorphicCard(
-                      borderColor: GarudaColors.success.withValues(alpha: 0.3),
+                      borderColor: GarudaColors.success,
                       child: Row(
                         children: [
                           const Icon(Icons.check_circle, color: GarudaColors.success, size: 24),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Text(
-                              monState.lastResponse!.displayMessage,
-                              style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary),
-                            ),
+                            child: Text(monState.lastResponse!.displayMessage, style: GoogleFonts.inter(fontSize: 13, color: textColor)),
                           ),
                           if (monState.isMonitoring)
                             Container(
@@ -265,13 +420,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       children: [
-                        // Fatigue Check
                         SizedBox(
                           width: double.infinity,
                           child: OutlinedButton.icon(
                             onPressed: () async {
                               final driverId = ref.read(authProvider).user?.uid ?? 'unknown-driver';
-                              final loc = shipment.currentLocation ?? shipment.origin;
+                              final loc = _driverGpsLocation ?? shipment.currentLocation ?? shipment.origin;
                               final res = await ref.read(intelligenceProvider).checkDriverFatigue(
                                 driverId: driverId,
                                 driveStartTime: DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
@@ -283,9 +437,12 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                                 showDialog(
                                   context: context,
                                   builder: (ctx) => AlertDialog(
-                                    backgroundColor: GarudaColors.surface,
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: GarudaColors.glassBorder)),
-                                    title: Text('Fatigue Assessment', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700, color: GarudaColors.textPrimary)),
+                                    backgroundColor: isDark ? GarudaDarkColors.surface : GarudaColors.surface,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                      side: BorderSide(color: GarudaColors.primaryDark, width: 2),
+                                    ),
+                                    title: Text('Fatigue Assessment', style: GoogleFonts.outfit(fontWeight: FontWeight.w800, color: textColor)),
                                     content: Column(
                                       mainAxisSize: MainAxisSize.min,
                                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,22 +457,20 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                                           child: Row(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              const Icon(Icons.info_outline, size: 16, color: GarudaColors.textMuted),
+                                              Icon(Icons.info_outline, size: 16, color: GarudaColors.textMuted),
                                               const SizedBox(width: 8),
-                                              Expanded(child: Text(r, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary))),
+                                              Expanded(child: Text(r, style: GoogleFonts.inter(fontSize: 13, color: isDark ? GarudaDarkColors.textSecondary : GarudaColors.textSecondary))),
                                             ],
                                           ),
                                         )),
                                       ],
                                     ),
-                                    actions: [
-                                      TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))
-                                    ],
+                                    actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK'))],
                                   ),
                                 );
                               }
                             },
-                            style: OutlinedButton.styleFrom(foregroundColor: GarudaColors.info, side: BorderSide(color: GarudaColors.info.withValues(alpha: 0.5))),
+                            style: OutlinedButton.styleFrom(foregroundColor: GarudaColors.info, side: const BorderSide(color: GarudaColors.info, width: 2)),
                             icon: const Icon(Icons.health_and_safety),
                             label: const Text('Check Fatigue Level'),
                           ),
@@ -332,26 +487,29 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         onPressed: () => _showReportIncidentDialog(context),
         backgroundColor: GarudaColors.danger,
         icon: const Icon(Icons.report_problem),
-        label: Text('Report Incident', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+        label: Text('Report Incident', style: GoogleFonts.outfit(fontWeight: FontWeight.w700)),
       ),
     );
   }
 
   void _showReportIncidentDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+
     showDialog(
       context: context,
       builder: (ctx) {
         return AlertDialog(
-          backgroundColor: GarudaColors.surface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: GarudaColors.glassBorder)),
+          backgroundColor: isDark ? GarudaDarkColors.surface : GarudaColors.surface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: GarudaColors.primaryDark, width: 2)),
           title: Row(
             children: [
               const Icon(Icons.warning, color: GarudaColors.danger),
               const SizedBox(width: 8),
-              Text('Report Incident', style: GoogleFonts.spaceGrotesk(color: GarudaColors.textPrimary, fontWeight: FontWeight.w700)),
+              Text('Report Incident', style: GoogleFonts.outfit(color: textColor, fontWeight: FontWeight.w800)),
             ],
           ),
-          content: Text('Report a roadblock, accident, or hazard to the logistics team.', style: GoogleFonts.inter(color: GarudaColors.textSecondary, height: 1.5)),
+          content: Text('Report a roadblock, accident, or hazard to the logistics team.', style: GoogleFonts.inter(color: GarudaColors.textMuted, height: 1.5)),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -364,12 +522,8 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
                 final driverId = ref.read(authProvider).user?.uid ?? 'unknown-driver';
                 if (shipment != null) {
                   await ref.read(shipmentProvider.notifier).reportIncident(
-                    widget.shipmentId,
-                    'ROAD_BLOCK',
-                    'Driver reported sudden roadblock',
-                    shipment.currentLocation ?? shipment.origin,
-                    0.8,
-                    driverId,
+                    widget.shipmentId, 'ROAD_BLOCK', 'Driver reported sudden roadblock',
+                    _driverGpsLocation ?? shipment.currentLocation ?? shipment.origin, 0.8, driverId,
                   );
                   if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Incident reported')));
                 }
@@ -388,7 +542,7 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
       onPressed: () => _updateStatus(status),
       style: OutlinedButton.styleFrom(
         foregroundColor: color,
-        side: BorderSide(color: color.withValues(alpha: 0.5)),
+        side: BorderSide(color: color, width: 2),
         padding: const EdgeInsets.symmetric(vertical: 12),
       ),
       icon: Icon(icon, size: 16),

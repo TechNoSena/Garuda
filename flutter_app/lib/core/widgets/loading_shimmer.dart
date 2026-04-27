@@ -18,9 +18,13 @@ class LoadingShimmer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? GarudaDarkColors.surfaceLight : GarudaColors.surfaceLight;
+    final highlightColor = isDark ? GarudaDarkColors.card : GarudaColors.surface.withValues(alpha: 0.8);
+
     return Shimmer.fromColors(
-      baseColor: GarudaColors.surfaceLight,
-      highlightColor: GarudaColors.surface.withValues(alpha: 0.8),
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Column(
         children: List.generate(count, (i) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 6),
@@ -28,7 +32,7 @@ class LoadingShimmer extends StatelessWidget {
             height: height,
             width: width ?? double.infinity,
             decoration: BoxDecoration(
-              color: GarudaColors.surfaceLight,
+              color: baseColor,
               borderRadius: BorderRadius.circular(borderRadius),
             ),
           ),
@@ -46,14 +50,18 @@ class ShimmerLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final baseColor = isDark ? GarudaDarkColors.surfaceLight : GarudaColors.surfaceLight;
+    final highlightColor = isDark ? GarudaDarkColors.card : GarudaColors.surface;
+
     return Shimmer.fromColors(
-      baseColor: GarudaColors.surfaceLight,
-      highlightColor: GarudaColors.surface,
+      baseColor: baseColor,
+      highlightColor: highlightColor,
       child: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: GarudaColors.surfaceLight,
+          color: baseColor,
           borderRadius: BorderRadius.circular(4),
         ),
       ),

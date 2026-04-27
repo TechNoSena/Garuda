@@ -10,6 +10,7 @@ import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/garuda_app_bar.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/loading_shimmer.dart';
+import '../shared/settings_screen.dart';
 import 'active_ride_screen.dart';
 
 class DeliveryHome extends ConsumerStatefulWidget {
@@ -51,15 +52,14 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
         actions: [
           IconButton(icon: const Icon(Icons.refresh, size: 20), onPressed: _load),
           IconButton(
-            icon: const Icon(Icons.logout, size: 20),
-            onPressed: () => ref.read(authProvider.notifier).logout(),
+            icon: const Icon(Icons.settings_outlined, size: 20),
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen())),
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async => _load(),
         color: GarudaColors.deliveryColor,
-        backgroundColor: GarudaColors.card,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
@@ -75,45 +75,22 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
               
               const SizedBox(height: 24),
 
-              // Stats
               Row(
                 children: [
-                  Expanded(
-                    child: StatChip(
-                      label: 'Active',
-                      value: '${activeShipments.length}',
-                      icon: Icons.delivery_dining,
-                      color: GarudaColors.warning,
-                    ),
-                  ),
+                  Expanded(child: StatChip(label: 'Active', value: '${activeShipments.length}', icon: Icons.delivery_dining, color: GarudaColors.warning)),
                   const SizedBox(width: 12),
-                  Expanded(
-                    child: StatChip(
-                      label: 'Delivered',
-                      value: '${completedShipments.length}',
-                      icon: Icons.check_circle_outline,
-                      color: GarudaColors.success,
-                    ),
-                  ),
+                  Expanded(child: StatChip(label: 'Delivered', value: '${completedShipments.length}', icon: Icons.check_circle_outline, color: GarudaColors.success)),
                 ],
               ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
               const SizedBox(height: 32),
 
-              // Active deliveries
-              SectionHeader(
-                title: 'Active Deliveries',
-                trailing: '${activeShipments.length} pending',
-              ).animate().fadeIn(delay: 200.ms),
+              SectionHeader(title: 'Active Deliveries', trailing: '${activeShipments.length} pending').animate().fadeIn(delay: 200.ms),
 
               if (state.isLoading)
                 const LoadingShimmer(count: 3)
               else if (activeShipments.isEmpty)
-                const EmptyState(
-                  title: 'No active deliveries',
-                  subtitle: 'Assigned shipments will appear here',
-                  icon: Icons.delivery_dining,
-                ).animate().fadeIn(delay: 300.ms)
+                const EmptyState(title: 'No active deliveries', subtitle: 'Assigned shipments will appear here', icon: Icons.delivery_dining).animate().fadeIn(delay: 300.ms)
               else
                 ...activeShipments.asMap().entries.map((entry) {
                   final shipment = entry.value;
@@ -122,15 +99,12 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => ActiveRideScreen(shipmentId: shipment.shipmentId),
-                        ),
+                        MaterialPageRoute(builder: (_) => ActiveRideScreen(shipmentId: shipment.shipmentId)),
                       ).then((_) => _load());
                     },
                   ).animate().fadeIn(delay: (300 + entry.key * 50).ms).slideX(begin: 0.05);
                 }),
 
-              // Completed section
               if (completedShipments.isNotEmpty) ...[
                 const SizedBox(height: 32),
                 SectionHeader(title: 'Completed Today').animate().fadeIn(),

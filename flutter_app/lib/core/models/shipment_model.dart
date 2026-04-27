@@ -29,6 +29,23 @@ enum ShipmentStatus {
   bool get isActive => lifecycle.contains(this);
 }
 
+/// Delivery man type — determines routing behavior
+enum DeliveryType {
+  relay('RELAY', 'Relay (Warehouse → Warehouse)'),
+  lastMile('LAST_MILE', 'Last Mile (City Delivery)');
+
+  final String value;
+  final String label;
+  const DeliveryType(this.value, this.label);
+
+  static DeliveryType fromString(String val) {
+    return DeliveryType.values.firstWhere(
+      (e) => e.value == val,
+      orElse: () => DeliveryType.lastMile,
+    );
+  }
+}
+
 class LatLng {
   final double lat;
   final double lng;
@@ -65,6 +82,8 @@ class Shipment {
   final double? weightKg;
   final Map<String, dynamic>? timestamps;
   final bool isMock;
+  final DeliveryType deliveryType;
+  final List<String> coupledShipmentIds;
 
   Shipment({
     required this.shipmentId,
@@ -81,6 +100,8 @@ class Shipment {
     this.weightKg,
     this.timestamps,
     this.isMock = false,
+    this.deliveryType = DeliveryType.lastMile,
+    this.coupledShipmentIds = const [],
   });
 
   factory Shipment.fromJson(Map<String, dynamic> json) {
@@ -101,6 +122,8 @@ class Shipment {
       weightKg: json['weight_kg']?.toDouble(),
       timestamps: json['timestamps'],
       isMock: json['mock'] == true,
+      deliveryType: DeliveryType.fromString(json['delivery_type'] ?? 'LAST_MILE'),
+      coupledShipmentIds: (json['coupled_shipment_ids'] as List?)?.map((e) => e.toString()).toList() ?? [],
     );
   }
 }

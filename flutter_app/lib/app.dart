@@ -14,10 +14,14 @@ class GarudaApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
     return MaterialApp(
       title: 'Project Garuda',
       debugShowCheckedModeBanner: false,
       theme: GarudaTheme.lightTheme,
+      darkTheme: GarudaTheme.darkTheme,
+      themeMode: themeMode,
       home: const _AuthGate(),
     );
   }

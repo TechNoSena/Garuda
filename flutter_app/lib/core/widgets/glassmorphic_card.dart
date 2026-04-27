@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_theme.dart';
 
 // ─────────────────────────────────────────────────────────────
-//  GLASSMORPHIC CARD
+//  GLASSMORPHIC CARD (now theme-aware)
 // ─────────────────────────────────────────────────────────────
 class GlassmorphicCard extends StatelessWidget {
   final Widget child;
@@ -25,19 +25,20 @@ class GlassmorphicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? GarudaDarkColors.card : GarudaColors.card;
+    final border = isDark ? GarudaDarkColors.glassBorder : GarudaColors.glassBorder;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: padding ?? const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: gradient == null ? GarudaColors.card : null,
+          color: gradient == null ? cardColor : null,
           gradient: gradient,
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(
-            color: borderColor ?? GarudaColors.glassBorder,
-            width: 1,
-          ),
+          border: Border.all(color: borderColor ?? border, width: 2),
         ),
         child: child,
       ),
@@ -81,28 +82,21 @@ class GradientButton extends StatelessWidget {
               gradient: onPressed == null ? null : gradient,
               color: onPressed == null ? GarudaColors.surfaceLight : null,
               borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: GarudaColors.primaryDark, width: 2),
             ),
             child: Center(
               child: isLoading
-                  ? const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: GarudaColors.primary),
-                    )
+                  ? const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (icon != null) ...[
-                          Icon(icon, size: 18, color: GarudaColors.primary),
+                          Icon(icon, size: 18, color: Colors.white),
                           const SizedBox(width: 8),
                         ],
                         Text(
                           label,
-                          style: GoogleFonts.inter(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: GarudaColors.textPrimary,
-                          ),
+                          style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white),
                         ),
                       ],
                     ),
@@ -122,12 +116,7 @@ class StatusBadge extends StatelessWidget {
   final Color color;
   final bool pulsing;
 
-  const StatusBadge({
-    super.key,
-    required this.label,
-    required this.color,
-    this.pulsing = false,
-  });
+  const StatusBadge({super.key, required this.label, required this.color, this.pulsing = false});
 
   @override
   Widget build(BuildContext context) {
@@ -136,26 +125,14 @@ class StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
+        border: Border.all(color: color, width: 2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
+          Container(width: 6, height: 6, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-              letterSpacing: 0.5,
-            ),
-          ),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: color, letterSpacing: 0.5)),
         ],
       ),
     );
@@ -171,45 +148,30 @@ class StatChip extends StatelessWidget {
   final Color color;
   final IconData icon;
 
-  const StatChip({
-    super.key,
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
+  const StatChip({super.key, required this.label, required this.value, required this.color, required this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? GarudaDarkColors.card : GarudaColors.card;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: GarudaColors.card,
+        color: cardColor,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
+        border: Border.all(color: color, width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon, color: color, size: 18),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: GoogleFonts.spaceGrotesk(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: GarudaColors.textPrimary,
-            ),
-          ),
+          Text(value, style: GoogleFonts.spaceGrotesk(fontSize: 22, fontWeight: FontWeight.w700, color: textColor)),
           const SizedBox(height: 2),
-          Text(
-            label,
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              color: GarudaColors.textMuted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, color: mutedColor, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -228,26 +190,19 @@ class SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
-          Text(
-            title,
-            style: GoogleFonts.spaceGrotesk(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: GarudaColors.textPrimary,
-            ),
-          ),
+          Text(title, style: GoogleFonts.spaceGrotesk(fontSize: 16, fontWeight: FontWeight.w700, color: textColor)),
           const Spacer(),
           if (trailing != null)
             GestureDetector(
               onTap: onTrailingTap,
-              child: Text(
-                trailing!,
-                style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.primary, fontWeight: FontWeight.w500),
-              ),
+              child: Text(trailing!, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.primary, fontWeight: FontWeight.w600)),
             ),
         ],
       ),
@@ -256,7 +211,7 @@ class SectionHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  SHIPMENT TILE
+//  SHIPMENT TILE (theme-aware)
 // ─────────────────────────────────────────────────────────────
 Color _statusColor(String status) {
   switch (status) {
@@ -284,60 +239,67 @@ class ShipmentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? GarudaDarkColors.card : GarudaColors.card;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
     final statusStr = shipment.status.value as String;
     final color = _statusColor(statusStr);
 
-    return GlassmorphicCard(
-      borderColor: color.withValues(alpha: 0.3),
+    return GestureDetector(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: color.withValues(alpha: 0.3)),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: color, width: 2),
+              ),
+              child: Icon(_modeIcon(shipment.routeMode), color: color, size: 20),
             ),
-            child: Icon(_modeIcon(shipment.routeMode), color: color, size: 20),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  shipment.packageDescription ?? 'Package',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: GarudaColors.textPrimary,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    shipment.packageDescription ?? 'Package',
+                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: textColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '${shipment.origin.toDisplayString()}  →  ${shipment.destination.toDisplayString()}',
-                  style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  shipment.shipmentId.length > 16
-                      ? '#${shipment.shipmentId.substring(0, 16)}…'
-                      : '#${shipment.shipmentId}',
-                  style: TextStyle(fontSize: 10, color: GarudaColors.textMuted, fontFamily: 'monospace'),
-                ),
-              ],
+                  const SizedBox(height: 3),
+                  Text(
+                    '${shipment.origin.toDisplayString()}  →  ${shipment.destination.toDisplayString()}',
+                    style: GoogleFonts.inter(fontSize: 11, color: mutedColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    shipment.shipmentId.length > 16
+                        ? '#${shipment.shipmentId.substring(0, 16)}…'
+                        : '#${shipment.shipmentId}',
+                    style: TextStyle(fontSize: 10, color: mutedColor, fontFamily: 'monospace'),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          StatusBadge(label: _statusLabel(statusStr), color: color),
-        ],
+            const SizedBox(width: 8),
+            StatusBadge(label: _statusLabel(statusStr), color: color),
+          ],
+        ),
       ),
     );
   }
@@ -361,15 +323,14 @@ class EmptyState extends StatelessWidget {
   final String subtitle;
   final IconData icon;
 
-  const EmptyState({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.icon,
-  });
+  const EmptyState({super.key, required this.title, required this.subtitle, required this.icon});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 32),
@@ -378,27 +339,16 @@ class EmptyState extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: GarudaColors.surfaceLight,
+                color: isDark ? GarudaDarkColors.surfaceLight : GarudaColors.surfaceLight,
                 shape: BoxShape.circle,
-                border: Border.all(color: GarudaColors.glassBorder),
+                border: Border.all(color: GarudaColors.primaryDark, width: 2),
               ),
-              child: Icon(icon, size: 36, color: GarudaColors.textMuted),
+              child: Icon(icon, size: 36, color: mutedColor),
             ),
             const SizedBox(height: 20),
-            Text(
-              title,
-              style: GoogleFonts.spaceGrotesk(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: GarudaColors.textPrimary,
-              ),
-            ),
+            Text(title, style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w600, color: textColor)),
             const SizedBox(height: 8),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
-            ),
+            Text(subtitle, textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, color: mutedColor)),
           ],
         ),
       ),
@@ -407,7 +357,7 @@ class EmptyState extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  INFO ROW (label + value)
+//  INFO ROW
 // ─────────────────────────────────────────────────────────────
 class InfoRow extends StatelessWidget {
   final String label;
@@ -418,27 +368,18 @@ class InfoRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+    final mutedColor = isDark ? GarudaDarkColors.textMuted : GarudaColors.textMuted;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(
-            width: 120,
-            child: Text(
-              label,
-              style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
-            ),
-          ),
+          SizedBox(width: 120, child: Text(label, style: GoogleFonts.inter(fontSize: 13, color: mutedColor))),
           Expanded(
-            child: Text(
-              value,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: valueColor ?? GarudaColors.textPrimary,
-              ),
-            ),
+            child: Text(value, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: valueColor ?? textColor)),
           ),
         ],
       ),
@@ -447,7 +388,7 @@ class InfoRow extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  GRADIENT ROLE BANNER
+//  FUNKY BANNER (replaces GradientBanner)
 // ─────────────────────────────────────────────────────────────
 class GradientBanner extends StatelessWidget {
   final String title;
@@ -467,12 +408,21 @@ class GradientBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? GarudaDarkColors.textPrimary : GarudaColors.textPrimary;
+
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(8),
+          bottomLeft: Radius.circular(8),
+          bottomRight: Radius.circular(24),
+        ),
+        border: Border.all(color: GarudaColors.primaryDark, width: 3),
       ),
       child: Row(
         children: [
@@ -480,28 +430,15 @@ class GradientBanner extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: GoogleFonts.spaceGrotesk(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: GarudaColors.textPrimary,
-                  ),
-                ),
+                Text(title, style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.w800, color: textColor)),
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: GoogleFonts.inter(
-                    fontSize: 13,
-                    color: GarudaColors.textSecondary,
-                  ),
-                ),
+                Text(subtitle, style: GoogleFonts.inter(fontSize: 13, color: textColor.withValues(alpha: 0.7))),
               ],
             ),
           ),
           if (trailing != null) trailing!
           else if (icon != null)
-            Icon(icon, size: 40, color: GarudaColors.primary.withValues(alpha: 0.1)),
+            Icon(icon, size: 40, color: GarudaColors.primary.withValues(alpha: 0.15)),
         ],
       ),
     );

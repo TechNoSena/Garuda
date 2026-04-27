@@ -107,17 +107,34 @@ def create_shipment(req: CreateShipmentRequest) -> dict:
             "route_mode": req.route_mode.value,
             "package_description": req.package_description,
             "weight_kg": req.weight_kg,
+            "delivery_type": req.delivery_type.value if hasattr(req, 'delivery_type') else "LAST_MILE",
+            "coupled_shipment_ids": req.coupled_shipment_ids if hasattr(req, 'coupled_shipment_ids') else [],
             "timestamps": {
                 "created_at": datetime.now(timezone.utc).isoformat()
             },
             "location_history": []
         }
         doc_ref.set(shipment_data)
+        
+        # Auto-link shipment to consumer user doc (so consumer sees it on login)
+        try:
+            consumer_ref = db.collection("users").where(
+                filter=FieldFilter("email", "==", req.consumer_email)
+            ).stream()
+            for consumer_doc in consumer_ref:
+                from google.cloud.firestore_v1 import ArrayUnion
+                db.collection("users").document(consumer_doc.id).update({
+                    "linked_shipments": ArrayUnion([doc_ref.id])
+                })
+                break
+        except Exception:
+            pass  # Consumer may not be registered yet — shipment still queryable by email
+        
         return shipment_data
     except Exception as e:
         raise Exception(f"Failed to create shipment: {str(e)}")
 
-def update_shipment_status(shipment_id: str, status: ShipmentStatus, delivery_man_id: Optional[str] = None) -> dict:
+def update_shipment_status(shipment_id: str, status: ShipmentStatus, delivery_man_id: Optional[str] = None, delivery_type: Optional[str] = None) -> dict:
     if not db:
         return {"shipment_id": shipment_id, "status": status.value, "mock": True}
         
@@ -137,6 +154,9 @@ def update_shipment_status(shipment_id: str, status: ShipmentStatus, delivery_ma
                 delivery_man_id = u.id
                 break
         updates["delivery_man_id"] = delivery_man_id
+    
+    if delivery_type:
+        updates["delivery_type"] = delivery_type
     
     # Automatic timestamp tracking
     ts_key = f"timestamps.{status.value.lower()}_at"
@@ -176,6 +196,15 @@ def list_shipments_by_user(user_id: str, role: str) -> List[dict]:
     if not db:
         return [{"shipment_id": "mock-1", "status": "PENDING", "mock": True}]
     
+    from google.cloud.firestore_v1.base_query import FieldFilter
+    
+    # Consumer queries by email, others by UID
+    if role.upper() == "CONSUMER":
+        docs = db.collection("shipments").where(
+            filter=FieldFilter("consumer_email", "==", user_id)
+        ).stream()
+        return [doc.to_dict() for doc in docs]
+    
     field_map = {
         "SUPPLIER": "supplier_id",
         "LOGISTICS": "logistics_id",
@@ -185,7 +214,6 @@ def list_shipments_by_user(user_id: str, role: str) -> List[dict]:
     if not field:
         raise Exception(f"Invalid role for listing: {role}")
     
-    from google.cloud.firestore_v1.base_query import FieldFilter
     docs = db.collection("shipments").where(filter=FieldFilter(field, "==", user_id)).stream()
     return [doc.to_dict() for doc in docs]
 
