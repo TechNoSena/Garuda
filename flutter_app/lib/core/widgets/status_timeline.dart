@@ -47,7 +47,7 @@ class StatusTimeline extends StatelessWidget {
                           : null,
                     ),
                     child: isCompleted && !isCurrent
-                        ? const Icon(Icons.check, size: 8, color: Colors.white)
+                        ? const Icon(Icons.check, size: 8, color: GarudaColors.background)
                         : null,
                   ),
                   if (!isLast)

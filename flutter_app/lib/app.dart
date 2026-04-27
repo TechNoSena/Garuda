@@ -17,7 +17,7 @@ class GarudaApp extends ConsumerWidget {
     return MaterialApp(
       title: 'Project Garuda',
       debugShowCheckedModeBanner: false,
-      theme: GarudaTheme.darkTheme,
+      theme: GarudaTheme.lightTheme,
       home: const _AuthGate(),
     );
   }

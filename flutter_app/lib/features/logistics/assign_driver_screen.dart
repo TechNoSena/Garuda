@@ -46,9 +46,9 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
+              const Icon(Icons.check_circle, color: GarudaColors.background),
               const SizedBox(width: 8),
-              Text('Driver assigned successfully!', style: GoogleFonts.inter(color: Colors.white)),
+              Text('Driver assigned successfully!', style: GoogleFonts.inter(color: GarudaColors.background)),
             ],
           ),
           backgroundColor: GarudaColors.success,
@@ -102,7 +102,7 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
                                 gradient: GarudaGradients.logistics,
                                 borderRadius: BorderRadius.circular(14),
                               ),
-                              child: const Icon(Icons.inventory_2, color: Colors.white, size: 24),
+                              child: const Icon(Icons.inventory_2, color: GarudaColors.background, size: 24),
                             ),
                             const SizedBox(width: 14),
                             Expanded(

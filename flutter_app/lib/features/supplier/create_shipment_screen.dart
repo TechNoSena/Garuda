@@ -97,9 +97,9 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
+              const Icon(Icons.check_circle, color: GarudaColors.background),
               const SizedBox(width: 8),
-              Text('Shipment created successfully!', style: GoogleFonts.inter(color: Colors.white)),
+              Text('Shipment created successfully!', style: GoogleFonts.inter(color: GarudaColors.background)),
             ],
           ),
           backgroundColor: GarudaColors.success,
@@ -150,7 +150,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Precheck Failed: $e', style: GoogleFonts.inter(color: Colors.white)),
+          content: Text('Precheck Failed: $e', style: GoogleFonts.inter(color: GarudaColors.background)),
           backgroundColor: GarudaColors.danger,
         ));
       }

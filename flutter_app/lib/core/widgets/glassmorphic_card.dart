@@ -87,13 +87,13 @@ class GradientButton extends StatelessWidget {
                   ? const SizedBox(
                       width: 22,
                       height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: GarudaColors.primary),
                     )
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (icon != null) ...[
-                          Icon(icon, size: 18, color: Colors.white),
+                          Icon(icon, size: 18, color: GarudaColors.primary),
                           const SizedBox(width: 8),
                         ],
                         Text(
@@ -101,7 +101,7 @@ class GradientButton extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
-                            color: Colors.white,
+                            color: GarudaColors.textPrimary,
                           ),
                         ),
                       ],
@@ -485,7 +485,7 @@ class GradientBanner extends StatelessWidget {
                   style: GoogleFonts.spaceGrotesk(
                     fontSize: 20,
                     fontWeight: FontWeight.w700,
-                    color: Colors.white,
+                    color: GarudaColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -493,7 +493,7 @@ class GradientBanner extends StatelessWidget {
                   subtitle,
                   style: GoogleFonts.inter(
                     fontSize: 13,
-                    color: Colors.white.withValues(alpha: 0.8),
+                    color: GarudaColors.textSecondary,
                   ),
                 ),
               ],
@@ -501,7 +501,7 @@ class GradientBanner extends StatelessWidget {
           ),
           if (trailing != null) trailing!
           else if (icon != null)
-            Icon(icon, size: 40, color: Colors.white.withValues(alpha: 0.25)),
+            Icon(icon, size: 40, color: GarudaColors.primary.withValues(alpha: 0.1)),
         ],
       ),
     );

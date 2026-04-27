@@ -247,8 +247,8 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                 );
               },
               backgroundColor: GarudaColors.primary,
-              icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
-              label: Text("Secure Chat", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+              icon: const Icon(Icons.chat_bubble_outline, color: GarudaColors.background),
+              label: Text("Secure Chat", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: GarudaColors.background)),
             )
           : null,
     );

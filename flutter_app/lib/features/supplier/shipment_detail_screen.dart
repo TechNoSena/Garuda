@@ -102,7 +102,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                     gradient: GarudaGradients.primary,
                                     borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: const Icon(Icons.inventory_2, color: Colors.white, size: 24),
+                                  child: const Icon(Icons.inventory_2, color: GarudaColors.background, size: 24),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(

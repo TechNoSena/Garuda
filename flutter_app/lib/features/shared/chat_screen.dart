@@ -221,7 +221,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                             gradient: GarudaGradients.primary,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.send, color: Colors.white, size: 20),
+                          child: const Icon(Icons.send, color: GarudaColors.background, size: 20),
                         ),
                       ),
                     ],

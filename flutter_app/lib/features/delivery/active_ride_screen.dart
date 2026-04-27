@@ -61,9 +61,9 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.check_circle, color: Colors.white),
+              const Icon(Icons.check_circle, color: GarudaColors.background),
               const SizedBox(width: 8),
-              Text('Status updated to $status', style: GoogleFonts.inter(color: Colors.white)),
+              Text('Status updated to $status', style: GoogleFonts.inter(color: GarudaColors.background)),
             ],
           ),
           backgroundColor: GarudaColors.success,
