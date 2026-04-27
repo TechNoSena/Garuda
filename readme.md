@@ -1,7 +1,9 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/TechNoSena/Garuda/main/flutter_app/garuda_logo.png" alt="Project Garuda" width="120" onerror="this.src='https://www.gstatic.com/images/branding/product/2x/google_cloud_64dp.png'"/>
+  <img src="flutter_app/garuda_logo.png" alt="Project Garuda" width="120" onerror="this.src='https://www.gstatic.com/images/branding/product/2x/google_cloud_64dp.png'"/>
   
   # Project Garuda
+  [![Build Flutter APK](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml/badge.svg?branch=master)](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml)
+
   **Smart Supply Chains: Resilient Logistics & Dynamic Supply Chain Optimization**
 
   <p align="center">
