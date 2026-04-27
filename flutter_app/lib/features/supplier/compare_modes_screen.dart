@@ -25,10 +25,12 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(routingProvider.notifier).compareModes(
-      origin: widget.origin,
-      destination: widget.destination,
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(routingProvider.notifier).compareModes(
+        origin: widget.origin,
+        destination: widget.destination,
+      );
+    });
   }
 
   List<ModeComparison> _sorted(List<ModeComparison> items) {
@@ -50,7 +52,7 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Compare Modes', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+        title: Text('Compare Modes', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -63,9 +65,10 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
             )
           : state.comparison == null
               ? Center(
-                  child: Text(
-                    state.error ?? 'Failed to load comparison',
-                    style: GoogleFonts.inter(color: GarudaColors.textMuted),
+                  child: EmptyState(
+                    title: 'Comparison Failed',
+                    subtitle: state.error ?? 'Failed to load comparison data.',
+                    icon: Icons.error_outline,
                   ),
                 )
               : SingleChildScrollView(
@@ -75,35 +78,54 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
                     children: [
                       // Distance header
                       GlassmorphicCard(
+                        padding: const EdgeInsets.all(16),
                         child: Row(
                           children: [
-                            const Icon(Icons.straighten, color: GarudaColors.textMuted, size: 20),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Straight-line: ${state.comparison!.straightLineKm.toStringAsFixed(1)} km',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: GarudaColors.textSecondary,
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: GarudaColors.info.withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
                               ),
+                              child: const Icon(Icons.straighten, color: GarudaColors.info, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Straight-line Distance', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
+                                Text(
+                                  '${state.comparison!.straightLineKm.toStringAsFixed(1)} km',
+                                  style: GoogleFonts.spaceGrotesk(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w700,
+                                    color: GarudaColors.textPrimary,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ),
+                      ).animate().fadeIn().slideY(begin: 0.1),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 24),
 
                       // Sort tabs
-                      Row(
-                        children: [
-                          _sortChip('Fastest', 'fastest', Icons.speed),
-                          const SizedBox(width: 8),
-                          _sortChip('Cheapest', 'cheapest', Icons.currency_rupee),
-                          const SizedBox(width: 8),
-                          _sortChip('Greenest', 'greenest', Icons.eco),
-                        ],
-                      ),
+                      const SectionHeader(title: 'Sort By'),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _sortChip('Fastest', 'fastest', Icons.speed),
+                            const SizedBox(width: 12),
+                            _sortChip('Cheapest', 'cheapest', Icons.currency_rupee),
+                            const SizedBox(width: 12),
+                            _sortChip('Greenest', 'greenest', Icons.eco),
+                          ],
+                        ),
+                      ).animate().fadeIn(delay: 100.ms),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
 
                       // Mode cards
                       ..._sorted(state.comparison!.comparisons).asMap().entries.map((entry) {
@@ -113,37 +135,40 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
 
                         return GlassmorphicCard(
                           borderColor: isFirst ? tm.color.withValues(alpha: 0.5) : null,
+                          gradient: isFirst ? LinearGradient(colors: [GarudaColors.card, tm.color.withValues(alpha: 0.05)]) : null,
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
                                   Container(
-                                    width: 40,
-                                    height: 40,
+                                    width: 44,
+                                    height: 44,
                                     decoration: BoxDecoration(
-                                      color: tm.color.withValues(alpha: 0.12),
-                                      borderRadius: BorderRadius.circular(10),
+                                      color: tm.color.withValues(alpha: 0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: tm.color.withValues(alpha: 0.3)),
                                     ),
-                                    child: Icon(tm.icon, size: 20, color: tm.color),
+                                    child: Icon(tm.icon, size: 22, color: tm.color),
                                   ),
-                                  const SizedBox(width: 12),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           mode.mode,
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
+                                          style: GoogleFonts.spaceGrotesk(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
                                             color: GarudaColors.textPrimary,
                                           ),
                                         ),
                                         Text(
-                                          '${mode.distanceKm.toStringAsFixed(1)} km',
+                                          '${mode.distanceKm.toStringAsFixed(1)} km routed',
                                           style: GoogleFonts.inter(
-                                            fontSize: 11, color: GarudaColors.textMuted,
+                                            fontSize: 12, color: GarudaColors.textMuted,
                                           ),
                                         ),
                                       ],
@@ -151,37 +176,39 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
                                   ),
                                   if (isFirst)
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                       decoration: BoxDecoration(
-                                        color: tm.color.withValues(alpha: 0.15),
-                                        borderRadius: BorderRadius.circular(6),
+                                        color: tm.color.withValues(alpha: 0.2),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         _sortBy == 'fastest' ? '⚡ Fastest' :
                                         _sortBy == 'cheapest' ? '💰 Cheapest' : '🌱 Greenest',
                                         style: GoogleFonts.inter(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w600,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w700,
                                           color: tm.color,
                                         ),
                                       ),
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 14),
+                              const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  _metricBox('⏱ Duration', mode.durationDisplay, GarudaColors.info),
-                                  const SizedBox(width: 10),
-                                  _metricBox('💰 Cost', mode.costDisplay, GarudaColors.warning),
-                                  const SizedBox(width: 10),
-                                  _metricBox('🌿 CO₂', mode.co2Display, GarudaColors.success),
+                                  Expanded(child: _metricBox('⏱ Duration', mode.durationDisplay, GarudaColors.info)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _metricBox('💰 Cost', mode.costDisplay, GarudaColors.warning)),
+                                  const SizedBox(width: 12),
+                                  Expanded(child: _metricBox('🌿 CO₂', mode.co2Display, GarudaColors.success)),
                                 ],
                               ),
                             ],
                           ),
-                        ).animate().fadeIn(delay: (100 + entry.key * 80).ms).slideY(begin: 0.05);
+                        ).animate().fadeIn(delay: (200 + entry.key * 100).ms).slideY(begin: 0.05);
                       }),
+                      
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
@@ -194,25 +221,26 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
       onTap: () => setState(() => _sortBy = value),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: selected ? GarudaColors.primary.withValues(alpha: 0.2) : GarudaColors.surfaceLight,
-          borderRadius: BorderRadius.circular(8),
+          color: selected ? GarudaColors.primary.withValues(alpha: 0.15) : GarudaColors.surfaceLight,
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: selected ? GarudaColors.primary : GarudaColors.glassBorder,
+            width: selected ? 1.5 : 1.0,
           ),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 14, color: selected ? GarudaColors.primaryLight : GarudaColors.textMuted),
-            const SizedBox(width: 4),
+            Icon(icon, size: 16, color: selected ? GarudaColors.primaryLight : GarudaColors.textMuted),
+            const SizedBox(width: 8),
             Text(
               label,
               style: GoogleFonts.inter(
-                fontSize: 12,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                color: selected ? GarudaColors.primaryLight : GarudaColors.textSecondary,
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? GarudaColors.textPrimary : GarudaColors.textMuted,
               ),
             ),
           ],
@@ -222,29 +250,34 @@ class _CompareModesScreenState extends ConsumerState<CompareModesScreen> {
   }
 
   Widget _metricBox(String label, String value, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: GoogleFonts.outfit(
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      decoration: BoxDecoration(
+        color: GarudaColors.surfaceLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: GarudaColors.glassBorder, width: 0.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: GarudaColors.textMuted,
             ),
-            Text(
-              label,
-              style: GoogleFonts.inter(fontSize: 10, color: GarudaColors.textMuted),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

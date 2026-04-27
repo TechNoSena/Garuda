@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
@@ -27,8 +28,10 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
-    _startSSE();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+      _startSSE();
+    });
   }
 
   void _startSSE() {
@@ -36,8 +39,7 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
       if (event.data != null && mounted) {
         try {
           final data = jsonDecode(event.data!);
-          // Real app would update a live map here with data['lat'], data['lng']
-          // For now, we just refresh the whole view occasionally
+          // Update live map
         } catch (_) {}
       }
     });
@@ -71,7 +73,7 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Track Package', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+        title: Text('Track Package', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -83,25 +85,11 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
       body: state.isLoading && shipment == null
           ? const Padding(padding: EdgeInsets.all(24), child: LoadingShimmer(count: 4))
           : shipment == null
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.search_off, size: 48, color: GarudaColors.textMuted),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Shipment not found',
-                        style: GoogleFonts.outfit(fontSize: 16, color: GarudaColors.textSecondary),
-                      ),
-                      Text(
-                        'Check the ID and try again',
-                        style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted),
-                      ),
-                    ],
-                  ),
-                )
+              ? const EmptyState(title: 'Not Found', subtitle: 'Check the ID and try again', icon: Icons.search_off)
               : RefreshIndicator(
                   onRefresh: () async => _load(),
+                  color: GarudaColors.consumerColor,
+                  backgroundColor: GarudaColors.card,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(16),
@@ -110,106 +98,64 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                       children: [
                         // ETA hero
                         if (eta != null)
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  GarudaColors.primary.withValues(alpha: 0.15),
-                                  GarudaColors.primaryDark.withValues(alpha: 0.08),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: GarudaColors.primary.withValues(alpha: 0.3)),
+                          GlassmorphicCard(
+                            gradient: LinearGradient(
+                              colors: [GarudaColors.card, GarudaColors.cardHover],
                             ),
+                            borderColor: GarudaColors.consumerColor.withValues(alpha: 0.5),
                             child: Column(
                               children: [
                                 Text(
                                   'Estimated Arrival',
                                   style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 8),
                                 Text(
-                                  '${eta.etaMinutes} min',
-                                  style: GoogleFonts.outfit(
+                                  '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m',
+                                  style: GoogleFonts.spaceGrotesk(
                                     fontSize: 42,
                                     fontWeight: FontWeight.w700,
-                                    color: GarudaColors.accent,
+                                    color: GarudaColors.primaryLight,
                                   ),
                                 ),
+                                const SizedBox(height: 4),
                                 Text(
                                   '${eta.remainingKm.toStringAsFixed(1)} km remaining',
-                                  style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted),
+                                  style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
                                 ),
                               ],
                             ),
-                          ),
+                          ).animate().fadeIn().slideY(begin: 0.1),
 
-                        const SizedBox(height: 16),
-
-                        // Route info
-                        GlassmorphicCard(
-                          child: Column(
-                            children: [
-                              _routePoint(
-                                Icons.trip_origin,
-                                'From',
-                                shipment.origin.toDisplayString(),
-                                GarudaColors.primary,
-                              ),
-                              Container(
-                                width: 2,
-                                height: 20,
-                                margin: const EdgeInsets.only(left: 11),
-                                color: GarudaColors.glassBorder,
-                              ),
-                              if (shipment.currentLocation != null)
-                                _routePoint(
-                                  Icons.my_location,
-                                  'Current Location',
-                                  shipment.currentLocation!.toDisplayString(),
-                                  GarudaColors.warning,
-                                ),
-                              if (shipment.currentLocation != null)
-                                Container(
-                                  width: 2,
-                                  height: 20,
-                                  margin: const EdgeInsets.only(left: 11),
-                                  color: GarudaColors.glassBorder,
-                                ),
-                              _routePoint(
-                                Icons.location_on,
-                                'To',
-                                shipment.destination.toDisplayString(),
-                                GarudaColors.danger,
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 24),
+                        const SectionHeader(title: 'Package Information'),
 
                         // Shipment info
                         GlassmorphicCard(
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  modeIconFromString(shipment.routeMode, size: 36),
-                                  const SizedBox(width: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: GarudaColors.surfaceLight,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: modeIconFromString(shipment.routeMode, size: 24),
+                                  ),
+                                  const SizedBox(width: 14),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          shipment.packageDescription ?? 'Package',
+                                          shipment.packageDescription ?? 'Garuda Package',
                                           style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
                                             color: GarudaColors.textPrimary,
                                           ),
                                         ),
@@ -223,89 +169,72 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 16),
+                              const Divider(),
+                              const SizedBox(height: 16),
+                              InfoRow(label: 'Tracking ID', value: shipment.shipmentId),
+                              InfoRow(label: 'From', value: shipment.origin.toDisplayString()),
+                              InfoRow(label: 'To', value: shipment.destination.toDisplayString()),
+                              if (shipment.currentLocation != null)
+                                InfoRow(label: 'Current', value: shipment.currentLocation!.toDisplayString(), valueColor: GarudaColors.warning),
                             ],
                           ),
-                        ),
+                        ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 24),
 
                         // Timeline
+                        const SectionHeader(title: 'Delivery Progress'),
                         GlassmorphicCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Delivery Progress',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: GarudaColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              StatusTimeline(currentStatus: shipment.status),
-                              const SizedBox(height: 24),
-                              Text(
-                                'Detailed Logs',
-                                style: GoogleFonts.outfit(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: GarudaColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 12),
-                              if (_isLoadingTimeline)
-                                const Center(child: CircularProgressIndicator(strokeWidth: 2))
-                              else if (_timelineEvents.isEmpty)
-                                Text('No timeline logs found.', style: GoogleFonts.inter(color: GarudaColors.textMuted))
-                              else
-                                ..._timelineEvents.map((e) => Padding(
-                                  padding: const EdgeInsets.only(bottom: 8.0),
-                                  child: Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Icon(Icons.circle, size: 8, color: GarudaColors.primary),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(e.detail, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary)),
-                                            Text(e.timestamp.substring(0, 16).replaceFirst('T', ' '), style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
-                                          ],
+                          child: StatusTimeline(currentStatus: shipment.status),
+                        ).animate().fadeIn(delay: 200.ms),
+
+                        const SizedBox(height: 24),
+                        
+                        const SectionHeader(title: 'Detailed Logs'),
+                        GlassmorphicCard(
+                          padding: const EdgeInsets.all(16),
+                          child: _isLoadingTimeline
+                            ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+                            : _timelineEvents.isEmpty
+                              ? Center(child: Text('No timeline logs found.', style: GoogleFonts.inter(color: GarudaColors.textMuted)))
+                              : Column(
+                                  children: _timelineEvents.map((e) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 12.0),
+                                    child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Container(
+                                          margin: const EdgeInsets.only(top: 4),
+                                          width: 8,
+                                          height: 8,
+                                          decoration: const BoxDecoration(
+                                            color: GarudaColors.primaryLight,
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                )),
-                            ],
-                          ),
-                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(e.detail, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary)),
+                                              const SizedBox(height: 2),
+                                              Text(e.timestamp.substring(0, 16).replaceFirst('T', ' '), style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  )).toList(),
+                                ),
+                        ).animate().fadeIn(delay: 300.ms),
+
+                        const SizedBox(height: 40),
                       ],
                     ),
                   ),
                 ),
-    );
-  }
-
-  Widget _routePoint(IconData icon, String label, String value, Color color) {
-    return Row(
-      children: [
-        Icon(icon, size: 22, color: color),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
-              Text(
-                value,
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: GarudaColors.textPrimary),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 }

@@ -403,6 +403,37 @@ def predict_demand_surge(center: LatLng, radius_km: float, days_ahead: int, cate
         return {"surge_multiplier": 1.0, "error": str(e)}
 
 
+def check_mode_feasibility(origin: LatLng, destination: LatLng) -> dict:
+    """Checks if FLIGHT and SHIP modes are physically possible between origin and destination."""
+    if not model or not search_tool:
+        return {"FLIGHT": True, "SHIP": True, "RAIL": True, "ROAD": True, "reason": "AI offline"}
+        
+    prompt = f"""
+    Context: Garuda Logistics Mode Feasibility Check.
+    Origin: ({origin.lat}, {origin.lng})
+    Destination: ({destination.lat}, {destination.lng})
+    
+    Task: 
+    1. Search to determine if the origin and destination coordinates are near major commercial airports (within ~100km). If both are, FLIGHT is feasible.
+    2. Search to determine if both origin and destination are near major seaports or navigable waterways. If either is landlocked (inland without port access), SHIP is NOT feasible.
+    
+    Strictly return JSON:
+    {{
+      "FLIGHT": boolean,
+      "SHIP": boolean,
+      "RAIL": boolean,
+      "ROAD": boolean,
+      "reason": "short explanation of why flight/ship are or aren't possible"
+    }}
+    """
+    try:
+        response = model.generate_content(prompt, tools=[search_tool])
+        raw_text = response.text.replace("```json", "").replace("```", "").strip()
+        return json.loads(raw_text)
+    except Exception as e:
+        print(f"Feasibility AI Error: {e}")
+        return {"FLIGHT": True, "SHIP": True, "RAIL": True, "ROAD": True, "reason": "Error checking feasibility"}
+
 def assess_package_integrity(origin: LatLng, destination: LatLng, mode: str, weight_kg: float, cargo_type: str) -> dict:
     """Package integrity score — risk to package based on route vibration, weather, handling."""
     from app.services.routing_strategy import calculate_haversine

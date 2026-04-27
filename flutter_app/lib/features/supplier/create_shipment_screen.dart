@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/models/shipment_model.dart';
 import '../../core/models/routing_model.dart';
@@ -8,10 +9,12 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/providers/routing_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
+import '../../core/widgets/garuda_app_bar.dart';
 import '../../core/widgets/risk_badge.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/analytics_model.dart';
 import 'compare_modes_screen.dart';
+import 'location_picker_screen.dart';
 
 class CreateShipmentScreen extends ConsumerStatefulWidget {
   const CreateShipmentScreen({super.key});
@@ -27,27 +30,35 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   final _weightCtrl = TextEditingController();
   final _logisticsIdCtrl = TextEditingController(text: 'logistics-uid');
 
-  // Origin / Destination
-  final _originLatCtrl = TextEditingController(text: '22.5436');
-  final _originLngCtrl = TextEditingController(text: '85.7969');
-  final _destLatCtrl = TextEditingController(text: '22.7681');
-  final _destLngCtrl = TextEditingController(text: '86.2007');
-
+  LatLng _origin = const LatLng(lat: 22.5436, lng: 85.7969);
+  LatLng _destination = const LatLng(lat: 22.7681, lng: 86.2007);
   TransportMode _selectedMode = TransportMode.roadCar;
+  String _cargoType = 'general';
+  
   BillingEstimate? _billingEstimate;
   bool _isLoadingBilling = false;
   Map<String, dynamic>? _precheckResult;
   bool _isLoadingPrecheck = false;
 
-  LatLng get _origin => LatLng(
-    lat: double.tryParse(_originLatCtrl.text) ?? 22.5436,
-    lng: double.tryParse(_originLngCtrl.text) ?? 85.7969,
-  );
+  final List<String> _cargoTypes = ['general', 'fragile', 'perishable', 'hazardous', 'electronics'];
 
-  LatLng get _destination => LatLng(
-    lat: double.tryParse(_destLatCtrl.text) ?? 22.7681,
-    lng: double.tryParse(_destLngCtrl.text) ?? 86.2007,
-  );
+  Future<void> _pickLocation(bool isOrigin) async {
+    final result = await Navigator.push<LatLng>(
+      context,
+      MaterialPageRoute(builder: (_) => LocationPickerScreen(
+        initialLocation: isOrigin ? _origin : _destination,
+      )),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        if (isOrigin) _origin = result;
+        else _destination = result;
+        // reset checks
+        _billingEstimate = null;
+        _precheckResult = null;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -55,10 +66,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     _descriptionCtrl.dispose();
     _weightCtrl.dispose();
     _logisticsIdCtrl.dispose();
-    _originLatCtrl.dispose();
-    _originLngCtrl.dispose();
-    _destLatCtrl.dispose();
-    _destLngCtrl.dispose();
     super.dispose();
   }
 
@@ -80,7 +87,16 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
 
     if (shipment != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Shipment created successfully!')),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Shipment created successfully!', style: GoogleFonts.inter(color: Colors.white)),
+            ],
+          ),
+          backgroundColor: GarudaColors.success,
+        ),
       );
       Navigator.pop(context, true);
     }
@@ -95,14 +111,6 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     );
   }
 
-  void _checkRisk() {
-    ref.read(routingProvider.notifier).analyzeRisk(
-      origin: _origin,
-      destination: _destination,
-      mode: _selectedMode.value,
-    );
-  }
-
   Future<void> _fetchBillingEstimate() async {
     setState(() => _isLoadingBilling = true);
     try {
@@ -111,6 +119,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
         destination: _destination,
         mode: _selectedMode.value,
         weightKg: double.tryParse(_weightCtrl.text) ?? 5.0,
+        isFragile: _cargoType == 'fragile',
       );
       if (mounted) setState(() => _billingEstimate = est);
     } catch (_) {
@@ -122,15 +131,22 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   Future<void> _runPrecheck() async {
     setState(() => _isLoadingPrecheck = true);
     try {
+      final sid = await ref.read(routingProvider.notifier).ensureSession();
       final res = await ApiService().precheckRoute(
-        sessionId: 'mock-session', // In a real app we'd grab this from routingProvider
+        sessionId: sid,
         origin: _origin,
         destination: _destination,
         mode: _selectedMode.value,
-        cargoType: 'general',
+        cargoType: _cargoType,
       );
       if (mounted) setState(() => _precheckResult = res);
-    } catch (_) {
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Precheck Failed: $e', style: GoogleFonts.inter(color: Colors.white)),
+          backgroundColor: GarudaColors.danger,
+        ));
+      }
     } finally {
       if (mounted) setState(() => _isLoadingPrecheck = false);
     }
@@ -139,16 +155,9 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   @override
   Widget build(BuildContext context) {
     final shipState = ref.watch(shipmentProvider);
-    final routeState = ref.watch(routingProvider);
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('New Shipment', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      appBar: const GarudaAppBar(title: 'New Shipment', showBack: true),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -156,317 +165,254 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Origin
-              _sectionTitle('Origin'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _originLatCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 13),
-                      decoration: const InputDecoration(labelText: 'Lat'),
+              // ── Locations ──────────────────────────────────────
+              const SectionHeader(title: '1. Locations'),
+              GlassmorphicCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    _buildLocationPicker(true, 'Origin', _origin),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Divider(color: GarudaColors.glassBorderStrong),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _originLngCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 13),
-                      decoration: const InputDecoration(labelText: 'Lng'),
-                    ),
-                  ),
-                ],
-              ),
+                    _buildLocationPicker(false, 'Destination', _destination),
+                  ],
+                ),
+              ).animate().fadeIn(delay: 50.ms),
+
+              // ── Package Details ────────────────────────────────
               const SizedBox(height: 16),
-
-              // Destination
-              _sectionTitle('Destination'),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _destLatCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 13),
-                      decoration: const InputDecoration(labelText: 'Lat'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _destLngCtrl,
-                      keyboardType: TextInputType.number,
-                      style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 13),
-                      decoration: const InputDecoration(labelText: 'Lng'),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Transport mode
-              _sectionTitle('Transport Mode'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: TransportMode.values.map((mode) {
-                  final selected = _selectedMode == mode;
-                  return GestureDetector(
-                    onTap: () => setState(() => _selectedMode = mode),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: selected ? mode.color.withValues(alpha: 0.15) : GarudaColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: selected ? mode.color : GarudaColors.glassBorder,
-                          width: selected ? 1.5 : 0.5,
-                        ),
+              const SectionHeader(title: '2. Package Details'),
+              GlassmorphicCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextFormField(
+                      controller: _descriptionCtrl,
+                      style: GoogleFonts.inter(color: GarudaColors.textPrimary),
+                      decoration: const InputDecoration(
+                        labelText: 'Package Description',
+                        hintText: 'E.g. Electronics, Medical Supplies',
+                        prefixIcon: Icon(Icons.inventory_2_outlined),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(mode.icon, size: 18, color: selected ? mode.color : GarudaColors.textMuted),
-                          const SizedBox(width: 6),
-                          Text(
-                            mode.label,
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                              color: selected ? mode.color : GarudaColors.textSecondary,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _weightCtrl,
+                            keyboardType: TextInputType.number,
+                            style: GoogleFonts.inter(color: GarudaColors.textPrimary),
+                            decoration: const InputDecoration(
+                              labelText: 'Weight (kg)',
+                              prefixIcon: Icon(Icons.scale_outlined),
                             ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text('Cargo Type', style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary)),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _cargoTypes.map((type) {
+                        final isSel = _cargoType == type;
+                        return ChoiceChip(
+                          label: Text(type.toUpperCase()),
+                          selected: isSel,
+                          onSelected: (val) {
+                            if (val) setState(() => _cargoType = type);
+                          },
+                          backgroundColor: GarudaColors.surfaceLight,
+                          selectedColor: GarudaColors.primary.withValues(alpha: 0.2),
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 11,
+                            fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                            color: isSel ? GarudaColors.primaryLight : GarudaColors.textMuted,
+                          ),
+                          side: BorderSide(color: isSel ? GarudaColors.primary : GarudaColors.glassBorderStrong),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _consumerEmailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      style: GoogleFonts.inter(color: GarudaColors.textPrimary),
+                      decoration: const InputDecoration(
+                        labelText: 'Consumer Email',
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Required';
+                        if (!v.contains('@')) return 'Invalid email';
+                        return null;
+                      },
                     ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 20),
+                  ],
+                ),
+              ).animate().fadeIn(delay: 150.ms),
 
-              // Pre-dispatch actions
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _compareModes,
-                      icon: const Icon(Icons.compare_arrows, size: 18),
-                      label: const Text('Compare'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: routeState.isLoading ? null : _checkRisk,
-                      icon: routeState.isLoading
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.shield_outlined, size: 18),
-                      label: const Text('Risk Check'),
-                    ),
-                  ),
-                ],
+              // ── Transport Mode ─────────────────────────────────
+              const SizedBox(height: 16),
+              SectionHeader(
+                title: '3. Transport Mode',
+                trailing: 'Compare Options',
+                onTrailingTap: _compareModes,
               ),
-              const SizedBox(height: 12),
+              GlassmorphicCard(
+                padding: const EdgeInsets.all(12),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: TransportMode.values.map((mode) {
+                    final isSel = _selectedMode == mode;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedMode = mode;
+                          _billingEstimate = null;
+                          _precheckResult = null;
+                        });
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSel ? GarudaColors.primary.withValues(alpha: 0.15) : GarudaColors.surfaceLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: isSel ? GarudaColors.primary : GarudaColors.glassBorderStrong),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_modeIcon(mode), size: 18, color: isSel ? GarudaColors.primaryLight : GarudaColors.textMuted),
+                            const SizedBox(width: 8),
+                            Text(
+                              mode.value.replaceAll('ROAD_', ''),
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                fontWeight: isSel ? FontWeight.w600 : FontWeight.w500,
+                                color: isSel ? GarudaColors.textPrimary : GarudaColors.textMuted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ).animate().fadeIn(delay: 250.ms),
+
+              // ── Intelligence Pre-Flight ───────────────────────
+              const SizedBox(height: 16),
+              const SectionHeader(title: '4. Garuda Intelligence'),
               Row(
                 children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoadingBilling ? null : _fetchBillingEstimate,
+                      icon: _isLoadingBilling 
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.receipt_long, size: 16),
+                      label: const Text('Get Estimate'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _isLoadingPrecheck ? null : _runPrecheck,
                       icon: _isLoadingPrecheck
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.security, size: 18),
-                      label: const Text('Pre-Dispatch Check'),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: OutlinedButton.icon(
-                      onPressed: _isLoadingBilling ? null : _fetchBillingEstimate,
-                      icon: _isLoadingBilling
-                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                          : const Icon(Icons.receipt_long, size: 18),
-                      label: const Text('Billing Estimate'),
+                        ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
+                        : const Icon(Icons.shield_outlined, size: 16),
+                      label: const Text('Pre-flight Check'),
                     ),
                   ),
                 ],
-              ),
+              ).animate().fadeIn(delay: 350.ms),
 
-              // Precheck result
+              // Billing Results
+              if (_billingEstimate != null) ...[
+                const SizedBox(height: 16),
+                GlassmorphicCard(
+                  gradient: LinearGradient(colors: [GarudaColors.card, GarudaColors.cardHover]),
+                  borderColor: GarudaColors.success.withValues(alpha: 0.5),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Estimate', style: GoogleFonts.spaceGrotesk(fontSize: 16, color: GarudaColors.textPrimary)),
+                          Text('₹${_billingEstimate!.totalEstimatedCostInr.toStringAsFixed(0)}', style: GoogleFonts.spaceGrotesk(fontSize: 24, fontWeight: FontWeight.bold, color: GarudaColors.success)),
+                        ],
+                      ),
+                      const Divider(),
+                      InfoRow(label: 'Transport Cost', value: '₹${_billingEstimate!.breakdown['transport_cost_inr']}'),
+                      if (_billingEstimate!.breakdown['weight_surcharge_inr'] != null && _billingEstimate!.breakdown['weight_surcharge_inr']! > 0)
+                        InfoRow(label: 'Weight Surcharge', value: '₹${_billingEstimate!.breakdown['weight_surcharge_inr']}'),
+                      if (_billingEstimate!.breakdown['carbon_tax_inr'] != null && _billingEstimate!.breakdown['carbon_tax_inr']! > 0)
+                        InfoRow(label: 'Carbon Tax', value: '₹${_billingEstimate!.breakdown['carbon_tax_inr']}', valueColor: GarudaColors.danger),
+                    ],
+                  ),
+                ).animate().fadeIn().slideY(),
+              ],
+
+              // Precheck Results
               if (_precheckResult != null) ...[
                 const SizedBox(height: 12),
                 GlassmorphicCard(
-                  borderColor: _precheckResult!['safe_to_dispatch'] == true ? GarudaColors.success : GarudaColors.danger,
+                  borderColor: _precheckResult!['safe_to_dispatch'] == true ? GarudaColors.success.withValues(alpha: 0.5) : GarudaColors.danger.withValues(alpha: 0.5),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
                         children: [
-                          Icon(_precheckResult!['safe_to_dispatch'] == true ? Icons.check_circle : Icons.warning, 
-                               color: _precheckResult!['safe_to_dispatch'] == true ? GarudaColors.success : GarudaColors.danger),
+                          Icon(
+                            _precheckResult!['safe_to_dispatch'] == true ? Icons.check_circle : Icons.warning_rounded,
+                            color: _precheckResult!['safe_to_dispatch'] == true ? GarudaColors.success : GarudaColors.danger,
+                          ),
                           const SizedBox(width: 8),
                           Text(
-                            _precheckResult!['safe_to_dispatch'] == true ? 'Safe to Dispatch' : 'Dispatch Warning',
-                            style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
+                            _precheckResult!['safe_to_dispatch'] == true ? 'Clear for Dispatch' : 'High Risk Route',
+                            style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.bold, color: GarudaColors.textPrimary),
                           ),
                         ],
                       ),
-                      if ((_precheckResult!['alerts'] as List).isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        ...(_precheckResult!['alerts'] as List).map((a) => Text(
-                          "• ${a['detail']}", 
-                          style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textSecondary)
-                        ))
-                      ],
+                      if (_precheckResult!['alerts'] != null && (_precheckResult!['alerts'] as List).isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        ...(_precheckResult!['alerts'] as List).map((a) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.info_outline, size: 14, color: GarudaColors.warning),
+                              const SizedBox(width: 6),
+                              Expanded(child: Text(a['detail'] ?? '', style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary))),
+                            ],
+                          ),
+                        )),
+                      ]
                     ],
                   ),
-                ),
+                ).animate().fadeIn().slideY(),
               ],
-
-              // Billing result
-              if (_billingEstimate != null) ...[
-                const SizedBox(height: 12),
-                GlassmorphicCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Estimated Cost', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
-                      const SizedBox(height: 8),
-                      Text(
-                        '₹${_billingEstimate!.totalEstimatedCostInr.toStringAsFixed(2)}',
-                        style: GoogleFonts.outfit(fontSize: 24, fontWeight: FontWeight.bold, color: GarudaColors.accent),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Base: ₹${_billingEstimate!.breakdown['transport_cost_inr']} | Surcharges: ₹${_billingEstimate!.breakdown['weight_surcharge_inr']} | Carbon Tax: ₹${_billingEstimate!.breakdown['carbon_tax_inr']}',
-                        style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-
-              // Risk result
-              if (routeState.riskAnalysis != null) ...[
-                const SizedBox(height: 12),
-                GlassmorphicCard(
-                  borderColor: routeState.riskAnalysis!.verdict.color.withValues(alpha: 0.4),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          RiskBadge(
-                            verdict: routeState.riskAnalysis!.verdict,
-                            score: routeState.riskAnalysis!.riskScore,
-                          ),
-                          const Spacer(),
-                          IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => ref.read(routingProvider.notifier).clearRisk(),
-                          ),
-                        ],
-                      ),
-                      if (routeState.riskAnalysis!.headsUp != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          routeState.riskAnalysis!.headsUp!,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: GarudaColors.textPrimary,
-                          ),
-                        ),
-                      ],
-                      if (routeState.riskAnalysis!.contextReason != null) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          routeState.riskAnalysis!.contextReason!,
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            color: GarudaColors.textMuted,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 20),
-              const Divider(),
-              const SizedBox(height: 16),
-
-              // Package info
-              _sectionTitle('Package Details'),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _descriptionCtrl,
-                style: GoogleFonts.inter(color: GarudaColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  prefixIcon: Icon(Icons.inventory_2_outlined, size: 20),
-                  hintText: 'e.g. Electronics - Laptop',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _weightCtrl,
-                keyboardType: TextInputType.number,
-                style: GoogleFonts.inter(color: GarudaColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Weight (kg)',
-                  prefixIcon: Icon(Icons.scale_outlined, size: 20),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _consumerEmailCtrl,
-                keyboardType: TextInputType.emailAddress,
-                style: GoogleFonts.inter(color: GarudaColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Consumer Email',
-                  prefixIcon: Icon(Icons.email_outlined, size: 20),
-                ),
-                validator: (v) {
-                  if (v == null || v.isEmpty) return 'Consumer email required';
-                  if (!v.contains('@')) return 'Invalid email';
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _logisticsIdCtrl,
-                style: GoogleFonts.inter(color: GarudaColors.textPrimary),
-                decoration: const InputDecoration(
-                  labelText: 'Logistics Partner ID',
-                  prefixIcon: Icon(Icons.business_outlined, size: 20),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Submit
-              SizedBox(
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: shipState.isLoading ? null : _createShipment,
-                  icon: shipState.isLoading
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.send),
-                  label: const Text('Create Shipment'),
-                ),
-              ),
-
-              if (shipState.error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: Text(shipState.error!, style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.danger)),
-                ),
 
               const SizedBox(height: 32),
+
+              // Create Button
+              GradientButton(
+                label: 'Create Shipment',
+                onPressed: _createShipment,
+                isLoading: shipState.isLoading,
+                icon: Icons.rocket_launch,
+                gradient: GarudaGradients.primary,
+              ).animate().fadeIn(delay: 450.ms),
+
+              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -474,14 +420,49 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     );
   }
 
-  Widget _sectionTitle(String text) {
-    return Text(
-      text,
-      style: GoogleFonts.outfit(
-        fontSize: 15,
-        fontWeight: FontWeight.w600,
-        color: GarudaColors.textSecondary,
+  Widget _buildLocationPicker(bool isOrigin, String label, LatLng value) {
+    return InkWell(
+      onTap: () => _pickLocation(isOrigin),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: (isOrigin ? GarudaColors.primary : GarudaColors.accent).withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(isOrigin ? Icons.trip_origin : Icons.location_on, 
+              size: 18, 
+              color: isOrigin ? GarudaColors.primaryLight : GarudaColors.accentLight
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
+                const SizedBox(height: 2),
+                Text(
+                  value.toDisplayString(),
+                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: GarudaColors.textMuted),
+        ],
       ),
     );
+  }
+
+  IconData _modeIcon(TransportMode mode) {
+    switch (mode) {
+      case TransportMode.roadBike: return Icons.two_wheeler;
+      case TransportMode.roadCar: return Icons.local_shipping;
+      case TransportMode.rail: return Icons.train;
+      case TransportMode.flight: return Icons.flight;
+      case TransportMode.ship: return Icons.directions_boat;
+    }
   }
 }

@@ -7,7 +7,7 @@ import '../../core/models/user_model.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/garuda_app_bar.dart';
-import '../../core/widgets/shared_widgets.dart';
+import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/loading_shimmer.dart';
 import 'assign_driver_screen.dart';
 
@@ -22,7 +22,7 @@ class _LogisticsHomeState extends ConsumerState<LogisticsHome> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   void _load() {
@@ -51,47 +51,46 @@ class _LogisticsHomeState extends ConsumerState<LogisticsHome> {
       ),
       body: RefreshIndicator(
         onRefresh: () async => _load(),
-        color: GarudaColors.accent,
+        color: GarudaColors.logisticsColor,
+        backgroundColor: GarudaColors.card,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Hello, ${auth.user?.name ?? 'Partner'} 🚛',
-                style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w700, color: GarudaColors.textPrimary),
-              ).animate().fadeIn(),
-              const SizedBox(height: 4),
-              Text(
-                'Manage fleet operations',
-                style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
-              ).animate().fadeIn(delay: 100.ms),
-              const SizedBox(height: 20),
+              GradientBanner(
+                title: 'Hello, ${auth.user?.name ?? 'Partner'} 🚛',
+                subtitle: 'Manage fleet operations',
+                gradient: GarudaGradients.logistics,
+                icon: Icons.local_shipping_outlined,
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+              
+              const SizedBox(height: 24),
 
               // Stats
               Row(
                 children: [
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Pending',
                       value: '${state.pendingCount}',
                       icon: Icons.pending_actions,
                       color: GarudaColors.warning,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Active',
                       value: '${state.inTransitCount}',
                       icon: Icons.local_shipping,
                       color: GarudaColors.info,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Completed',
                       value: '${state.deliveredCount}',
                       icon: Icons.done_all,
@@ -99,15 +98,14 @@ class _LogisticsHomeState extends ConsumerState<LogisticsHome> {
                     ),
                   ),
                 ],
+              ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
+
+              const SizedBox(height: 32),
+
+              SectionHeader(
+                title: 'Fleet Shipments',
+                trailing: '${state.shipments.length} total',
               ).animate().fadeIn(delay: 200.ms),
-
-              const SizedBox(height: 24),
-
-              Text(
-                'Shipments',
-                style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
-              ),
-              const SizedBox(height: 12),
 
               if (state.isLoading)
                 const LoadingShimmer(count: 4)
@@ -116,7 +114,7 @@ class _LogisticsHomeState extends ConsumerState<LogisticsHome> {
                   title: 'No shipments',
                   subtitle: 'Shipments assigned to your logistics firm will appear here',
                   icon: Icons.inventory_2_outlined,
-                )
+                ).animate().fadeIn(delay: 300.ms)
               else
                 ...state.shipments.asMap().entries.map((entry) {
                   return ShipmentTile(
@@ -129,7 +127,7 @@ class _LogisticsHomeState extends ConsumerState<LogisticsHome> {
                         ),
                       ).then((_) => _load());
                     },
-                  ).animate().fadeIn(delay: (300 + entry.key * 50).ms);
+                  ).animate().fadeIn(delay: (300 + entry.key * 50).ms).slideX(begin: 0.05);
                 }),
 
               const SizedBox(height: 60),

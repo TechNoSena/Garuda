@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/providers/routing_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/risk_badge.dart';
 import '../../core/widgets/loading_shimmer.dart';
-import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/status_timeline.dart';
 
 class AssignDriverScreen extends ConsumerStatefulWidget {
@@ -24,7 +24,9 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
   @override
   void initState() {
     super.initState();
-    ref.read(shipmentProvider.notifier).selectShipment(widget.shipmentId);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(shipmentProvider.notifier).selectShipment(widget.shipmentId);
+    });
   }
 
   @override
@@ -41,7 +43,16 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
     );
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Driver assigned!')),
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white),
+              const SizedBox(width: 8),
+              Text('Driver assigned successfully!', style: GoogleFonts.inter(color: Colors.white)),
+            ],
+          ),
+          backgroundColor: GarudaColors.success,
+        ),
       );
     }
   }
@@ -64,14 +75,14 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Manage Shipment', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+        title: Text('Manage Shipment', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
       ),
       body: shipment == null
-          ? const Center(child: LoadingShimmer(count: 3))
+          ? const Padding(padding: EdgeInsets.all(24), child: LoadingShimmer(count: 3))
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -79,131 +90,157 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
                 children: [
                   // Shipment info
                   GlassmorphicCard(
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            modeIconFromString(shipment.routeMode, size: 40),
-                            const SizedBox(width: 12),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                gradient: GarudaGradients.logistics,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: const Icon(Icons.inventory_2, color: Colors.white, size: 24),
+                            ),
+                            const SizedBox(width: 14),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     shipment.packageDescription ?? 'Shipment',
-                                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
+                                    style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w700, color: GarudaColors.textPrimary),
                                   ),
-                                  StatusChip(status: shipment.status),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'ID: ${shipment.shipmentId}',
+                                    style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted),
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
-                        _infoRow('From', shipment.origin.toDisplayString()),
-                        _infoRow('To', shipment.destination.toDisplayString()),
+                        const SizedBox(height: 24),
+                        InfoRow(label: 'Origin', value: shipment.origin.toDisplayString()),
+                        InfoRow(label: 'Destination', value: shipment.destination.toDisplayString()),
                       ],
                     ),
-                  ),
+                  ).animate().fadeIn().slideY(begin: 0.1),
 
+                  const SizedBox(height: 24),
+                  const SectionHeader(title: 'Assign Driver'),
+                  
                   // Assign driver
                   GlassmorphicCard(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '🛵 Assign Delivery Person',
-                          style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
+                          'Select the delivery personnel for this route.',
+                          style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 16),
                         Row(
                           children: [
                             Expanded(
                               child: TextField(
                                 controller: _driverIdCtrl,
-                                style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 13),
+                                style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 14),
                                 decoration: const InputDecoration(
-                                  hintText: 'Driver UID',
+                                  hintText: 'Enter Driver UID',
                                   prefixIcon: Icon(Icons.person_search, size: 20),
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
-                            ElevatedButton(
-                              onPressed: _assignDriver,
-                              child: const Text('Assign'),
+                            const SizedBox(width: 12),
+                            SizedBox(
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _assignDriver,
+                                style: ElevatedButton.styleFrom(backgroundColor: GarudaColors.logisticsColor),
+                                child: const Text('Assign'),
+                              ),
                             ),
                           ],
                         ),
                         if (shipment.deliveryManId != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'Currently assigned: ${shipment.deliveryManId}',
-                            style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.success),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: GarudaColors.success.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: GarudaColors.success.withValues(alpha: 0.3)),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.check_circle, size: 16, color: GarudaColors.success),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Assigned to: ${shipment.deliveryManId}',
+                                  style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.success, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ],
                     ),
-                  ),
+                  ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
+                  const SizedBox(height: 24),
+                  
                   // Risk analysis
-                  OutlinedButton.icon(
-                    onPressed: routeState.isLoading ? null : _analyzeRisk,
-                    icon: const Icon(Icons.shield_outlined, size: 18),
-                    label: const Text('Run Risk Analysis'),
-                  ),
-                  if (routeState.riskAnalysis != null) ...[
-                    const SizedBox(height: 8),
+                  const SectionHeader(title: 'Route Risk Analysis'),
+                  if (routeState.riskAnalysis == null)
+                    GradientButton(
+                      label: 'Analyze Risk Factors',
+                      icon: Icons.shield_outlined,
+                      isLoading: routeState.isLoading,
+                      onPressed: _analyzeRisk,
+                      gradient: GarudaGradients.consumer,
+                    ).animate().fadeIn(delay: 200.ms)
+                  else
                     GlassmorphicCard(
                       borderColor: routeState.riskAnalysis!.verdict.color.withValues(alpha: 0.4),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          RiskBadge(
-                            verdict: routeState.riskAnalysis!.verdict,
-                            score: routeState.riskAnalysis!.riskScore,
+                          Row(
+                            children: [
+                              RiskBadge(
+                                verdict: routeState.riskAnalysis!.verdict,
+                                score: routeState.riskAnalysis!.riskScore,
+                              ),
+                            ],
                           ),
                           if (routeState.riskAnalysis!.headsUp != null) ...[
-                            const SizedBox(height: 8),
+                            const SizedBox(height: 12),
                             Text(
                               routeState.riskAnalysis!.headsUp!,
-                              style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary),
+                              style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textPrimary, height: 1.5),
                             ),
                           ],
                         ],
                       ),
-                    ),
-                  ],
+                    ).animate().fadeIn(),
 
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 24),
 
                   // Status timeline
+                  const SectionHeader(title: 'Shipment Status'),
                   GlassmorphicCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Status', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
-                        const SizedBox(height: 12),
-                        StatusTimeline(currentStatus: shipment.status),
-                      ],
-                    ),
-                  ),
+                    child: StatusTimeline(currentStatus: shipment.status),
+                  ).animate().fadeIn(delay: 300.ms),
+                  
+                  const SizedBox(height: 40),
                 ],
               ),
             ),
-    );
-  }
-
-  Widget _infoRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        children: [
-          Text('$label: ', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
-          Text(value, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: GarudaColors.textPrimary)),
-        ],
-      ),
     );
   }
 }

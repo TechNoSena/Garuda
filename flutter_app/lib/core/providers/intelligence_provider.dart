@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/api_service.dart';
 import '../models/intelligence_model.dart';
 import '../models/routing_model.dart';
+import '../models/shipment_model.dart';
 
 final intelligenceProvider = Provider((ref) => IntelligenceNotifier(ApiService()));
 

@@ -62,55 +62,51 @@ class _ConsumerHomeState extends ConsumerState<ConsumerHome> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Hello, ${auth.user?.name ?? 'there'} 👋',
-                style: GoogleFonts.outfit(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: GarudaColors.textPrimary,
-                ),
-              ).animate().fadeIn(),
-              const SizedBox(height: 4),
-              Text(
-                'Track your deliveries',
-                style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
-              ).animate().fadeIn(delay: 100.ms),
+              GradientBanner(
+                title: 'Hello, ${auth.user?.name ?? 'there'} 👋',
+                subtitle: 'Track your deliveries',
+                gradient: GarudaGradients.consumer,
+                icon: Icons.inventory_2_outlined,
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // Track input
               GlassmorphicCard(
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '📦 Track a Shipment',
-                      style: GoogleFonts.outfit(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                      style: GoogleFonts.spaceGrotesk(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
                         color: GarudaColors.textPrimary,
                       ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: TextField(
                             controller: _trackingIdCtrl,
-                            style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 13),
+                            style: GoogleFonts.inter(color: GarudaColors.textPrimary, fontSize: 14),
                             decoration: const InputDecoration(
                               hintText: 'Enter shipment ID',
                               prefixIcon: Icon(Icons.search, size: 20),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             ),
                             onSubmitted: (_) => _trackShipment(),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 12),
                         SizedBox(
-                          height: 46,
+                          height: 52,
                           child: ElevatedButton(
                             onPressed: _trackShipment,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: GarudaColors.accent,
+                            ),
                             child: const Text('Track'),
                           ),
                         ),
@@ -118,36 +114,28 @@ class _ConsumerHomeState extends ConsumerState<ConsumerHome> {
                     ),
                   ],
                 ),
-              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05),
+              ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
               if (_trackedIds.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Recent Tracking',
-                  style: GoogleFonts.outfit(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: GarudaColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 32),
+                const SectionHeader(title: 'Recent Tracking').animate().fadeIn(),
                 ..._trackedIds.map((id) => GestureDetector(
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => TrackShipmentScreen(shipmentId: id)),
                   ),
                   child: Container(
-                    margin: const EdgeInsets.only(bottom: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
-                      color: GarudaColors.card,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: GarudaColors.glassBorder, width: 0.5),
+                      color: GarudaColors.surfaceLight,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: GarudaColors.glassBorder, width: 1),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.local_shipping, size: 18, color: GarudaColors.textMuted),
-                        const SizedBox(width: 10),
+                        const Icon(Icons.local_shipping, size: 20, color: GarudaColors.textMuted),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             id,
@@ -160,42 +148,51 @@ class _ConsumerHomeState extends ConsumerState<ConsumerHome> {
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        const Icon(Icons.chevron_right, size: 18, color: GarudaColors.textMuted),
+                        const Icon(Icons.chevron_right, size: 20, color: GarudaColors.textMuted),
                       ],
                     ),
                   ),
-                )),
+                )).toList().animate().fadeIn(delay: 200.ms),
               ],
 
               // Info card
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
               GlassmorphicCard(
-                borderColor: GarudaColors.primary.withValues(alpha: 0.3),
+                borderColor: GarudaColors.primary.withValues(alpha: 0.4),
+                gradient: LinearGradient(
+                  colors: [GarudaColors.card, GarudaColors.cardHover],
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '🦅 Powered by Garuda AI',
-                      style: GoogleFonts.outfit(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: GarudaColors.primaryLight,
-                      ),
+                    Row(
+                      children: [
+                        const Icon(Icons.auto_awesome, color: GarudaColors.primaryLight, size: 20),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Powered by Garuda AI',
+                          style: GoogleFonts.spaceGrotesk(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: GarudaColors.primaryLight,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 12),
                     Text(
                       'Your deliveries are protected by AI-powered route optimization. '
                       'Garuda detects disruptions before they affect your package and '
                       'automatically reroutes for the fastest delivery.',
                       style: GoogleFonts.inter(
-                        fontSize: 12,
+                        fontSize: 13,
                         color: GarudaColors.textSecondary,
                         height: 1.5,
                       ),
                     ),
                   ],
                 ),
-              ).animate().fadeIn(delay: 400.ms),
+              ).animate().fadeIn(delay: 300.ms),
             ],
           ),
         ),

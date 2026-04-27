@@ -6,7 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/garuda_app_bar.dart';
-import '../../core/widgets/shared_widgets.dart';
+import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/loading_shimmer.dart';
 import '../../core/models/user_model.dart';
 import 'create_shipment_screen.dart';
@@ -23,7 +23,7 @@ class _SupplierHomeState extends ConsumerState<SupplierHome> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   void _load() {
@@ -66,52 +66,46 @@ class _SupplierHomeState extends ConsumerState<SupplierHome> {
       ),
       body: RefreshIndicator(
         onRefresh: () async => _load(),
-        color: GarudaColors.accent,
+        color: GarudaColors.supplierColor,
+        backgroundColor: GarudaColors.card,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Greeting
-              Text(
-                'Hello, ${auth.user?.name ?? 'Supplier'} 👋',
-                style: GoogleFonts.outfit(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: GarudaColors.textPrimary,
-                ),
-              ).animate().fadeIn(),
-              const SizedBox(height: 4),
-              Text(
-                'Manage your supply chain',
-                style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
-              ).animate().fadeIn(delay: 100.ms),
-              const SizedBox(height: 20),
+              // Greeting Banner
+              GradientBanner(
+                title: 'Hello, ${auth.user?.name ?? 'Supplier'} 👋',
+                subtitle: 'Manage your supply chain',
+                gradient: GarudaGradients.supplier,
+                icon: Icons.inventory_2_outlined,
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+              const SizedBox(height: 24),
 
-              // Stats
+              // Stats Row
               Row(
                 children: [
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Pending',
                       value: '${shipState.pendingCount}',
                       icon: Icons.hourglass_empty,
                       color: GarudaColors.warning,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'In Transit',
                       value: '${shipState.inTransitCount}',
-                      icon: Icons.local_shipping,
+                      icon: Icons.local_shipping_outlined,
                       color: GarudaColors.info,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Delivered',
                       value: '${shipState.deliveredCount}',
                       icon: Icons.check_circle_outline,
@@ -119,38 +113,24 @@ class _SupplierHomeState extends ConsumerState<SupplierHome> {
                     ),
                   ),
                 ],
-              ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.05),
+              ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
-              // Shipments list
-              Row(
-                children: [
-                  Text(
-                    'Your Shipments',
-                    style: GoogleFonts.outfit(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w600,
-                      color: GarudaColors.textPrimary,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${shipState.shipments.length} total',
-                    style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
+              // Shipments Section
+              SectionHeader(
+                title: 'Your Shipments',
+                trailing: '${shipState.shipments.length} total',
+              ).animate().fadeIn(delay: 200.ms),
 
               if (shipState.isLoading)
                 const LoadingShimmer(count: 4)
               else if (shipState.shipments.isEmpty)
                 const EmptyState(
-                  title: 'No shipments yet',
+                  title: 'No shipments found',
                   subtitle: 'Tap the + button to create your first shipment',
                   icon: Icons.inventory_2_outlined,
-                )
+                ).animate().fadeIn(delay: 300.ms)
               else
                 ...shipState.shipments.asMap().entries.map((entry) {
                   return ShipmentTile(
@@ -175,7 +155,7 @@ class _SupplierHomeState extends ConsumerState<SupplierHome> {
                   ),
                 ),
 
-              const SizedBox(height: 80), // FAB clearance
+              const SizedBox(height: 100), // FAB clearance
             ],
           ),
         ),

@@ -1,4 +1,6 @@
 import 'routing_model.dart';
+import 'shipment_model.dart';
+
 
 class DisruptionEvent {
   final String type;

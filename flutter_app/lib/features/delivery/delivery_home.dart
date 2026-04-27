@@ -8,7 +8,7 @@ import '../../core/models/shipment_model.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/garuda_app_bar.dart';
-import '../../core/widgets/shared_widgets.dart';
+import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/loading_shimmer.dart';
 import 'active_ride_screen.dart';
 
@@ -23,7 +23,7 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   void _load() {
@@ -58,38 +58,37 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
       ),
       body: RefreshIndicator(
         onRefresh: () async => _load(),
-        color: GarudaColors.accent,
+        color: GarudaColors.deliveryColor,
+        backgroundColor: GarudaColors.card,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Hello, ${auth.user?.name ?? 'Driver'} 🛵',
-                style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w700, color: GarudaColors.textPrimary),
-              ).animate().fadeIn(),
-              const SizedBox(height: 4),
-              Text(
-                'Your delivery queue',
-                style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textMuted),
-              ).animate().fadeIn(delay: 100.ms),
-              const SizedBox(height: 20),
+              GradientBanner(
+                title: 'Hello, ${auth.user?.name ?? 'Driver'} 🛵',
+                subtitle: 'Your delivery queue',
+                gradient: GarudaGradients.delivery,
+                icon: Icons.two_wheeler,
+              ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+              
+              const SizedBox(height: 24),
 
               // Stats
               Row(
                 children: [
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Active',
                       value: '${activeShipments.length}',
                       icon: Icons.delivery_dining,
                       color: GarudaColors.warning,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: StatCard(
+                    child: StatChip(
                       label: 'Delivered',
                       value: '${completedShipments.length}',
                       icon: Icons.check_circle_outline,
@@ -97,16 +96,15 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
                     ),
                   ),
                 ],
-              ).animate().fadeIn(delay: 200.ms),
+              ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // Active deliveries
-              Text(
-                'Active Deliveries',
-                style: GoogleFonts.outfit(fontSize: 17, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
-              ),
-              const SizedBox(height: 12),
+              SectionHeader(
+                title: 'Active Deliveries',
+                trailing: '${activeShipments.length} pending',
+              ).animate().fadeIn(delay: 200.ms),
 
               if (state.isLoading)
                 const LoadingShimmer(count: 3)
@@ -115,35 +113,31 @@ class _DeliveryHomeState extends ConsumerState<DeliveryHome> {
                   title: 'No active deliveries',
                   subtitle: 'Assigned shipments will appear here',
                   icon: Icons.delivery_dining,
-                )
+                ).animate().fadeIn(delay: 300.ms)
               else
                 ...activeShipments.asMap().entries.map((entry) {
                   final shipment = entry.value;
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: ShipmentTile(
-                      shipment: shipment,
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ActiveRideScreen(shipmentId: shipment.shipmentId),
-                          ),
-                        ).then((_) => _load());
-                      },
-                    ),
-                  ).animate().fadeIn(delay: (300 + entry.key * 50).ms);
+                  return ShipmentTile(
+                    shipment: shipment,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ActiveRideScreen(shipmentId: shipment.shipmentId),
+                        ),
+                      ).then((_) => _load());
+                    },
+                  ).animate().fadeIn(delay: (300 + entry.key * 50).ms).slideX(begin: 0.05);
                 }),
 
               // Completed section
               if (completedShipments.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                Text(
-                  'Completed Today',
-                  style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, color: GarudaColors.textSecondary),
-                ),
-                const SizedBox(height: 8),
-                ...completedShipments.take(5).map((s) => ShipmentTile(shipment: s)),
+                const SizedBox(height: 32),
+                SectionHeader(title: 'Completed Today').animate().fadeIn(),
+                ...completedShipments.take(5).map((s) => Opacity(
+                  opacity: 0.7,
+                  child: ShipmentTile(shipment: s, onTap: () {}),
+                )).toList().animate().fadeIn(),
               ],
 
               const SizedBox(height: 60),

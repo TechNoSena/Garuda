@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/shipment_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/status_timeline.dart';
-import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/loading_shimmer.dart';
 import '../../core/providers/analytics_provider.dart';
 import '../../core/models/analytics_model.dart';
@@ -27,7 +27,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _load());
   }
 
   Future<void> _load() async {
@@ -64,7 +64,7 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Shipment Details', style: GoogleFonts.outfit(fontWeight: FontWeight.w600)),
+        title: Text('Shipment Track', style: GoogleFonts.spaceGrotesk(fontWeight: FontWeight.w700)),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),
@@ -82,45 +82,47 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
               child: LoadingShimmer(count: 5),
             )
           : shipment == null
-              ? Center(
-                  child: Text(
-                    'Shipment not found',
-                    style: GoogleFonts.inter(color: GarudaColors.textMuted),
-                  ),
-                )
+              ? const EmptyState(title: 'Not Found', subtitle: 'Shipment details could not be loaded.', icon: Icons.error_outline)
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Header card
+                      // Header Card
                       GlassmorphicCard(
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Row(
                               children: [
-                                modeIconFromString(shipment.routeMode, size: 42),
-                                const SizedBox(width: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    gradient: GarudaGradients.primary,
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: const Icon(Icons.inventory_2, color: Colors.white, size: 24),
+                                ),
+                                const SizedBox(width: 14),
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        shipment.packageDescription ?? 'Shipment',
-                                        style: GoogleFonts.outfit(
+                                        shipment.packageDescription ?? 'Garuda Shipment',
+                                        style: GoogleFonts.spaceGrotesk(
                                           fontSize: 18,
-                                          fontWeight: FontWeight.w600,
+                                          fontWeight: FontWeight.w700,
                                           color: GarudaColors.textPrimary,
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
+                                      const SizedBox(height: 4),
                                       Text(
-                                        'ID: ${shipment.shipmentId.substring(0, shipment.shipmentId.length.clamp(0, 12))}...',
-                                        style: const TextStyle(
+                                        'ID: ${shipment.shipmentId}',
+                                        style: GoogleFonts.inter(
                                           fontSize: 11,
                                           color: GarudaColors.textMuted,
-                                          fontFamily: 'monospace',
                                         ),
                                       ),
                                     ],
@@ -128,57 +130,68 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            // Route
-                            _infoRow(Icons.trip_origin, 'Origin', shipment.origin.toDisplayString()),
-                            const SizedBox(height: 8),
-                            _infoRow(Icons.location_on, 'Destination', shipment.destination.toDisplayString()),
-                            if (shipment.currentLocation != null) ...[
-                              const SizedBox(height: 8),
-                              _infoRow(Icons.my_location, 'Current', shipment.currentLocation!.toDisplayString()),
-                            ],
-                            if (shipment.weightKg != null) ...[
-                              const SizedBox(height: 8),
-                              _infoRow(Icons.scale, 'Weight', '${shipment.weightKg} kg'),
-                            ],
+                            const SizedBox(height: 24),
+                            // Route visual
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Column(
+                                  children: [
+                                    const Icon(Icons.trip_origin, size: 14, color: GarudaColors.primary),
+                                    Container(width: 2, height: 30, color: GarudaColors.glassBorderStrong),
+                                    const Icon(Icons.location_on, size: 14, color: GarudaColors.accentLight),
+                                  ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Origin', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
+                                      Text(shipment.origin.toDisplayString(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                      const SizedBox(height: 14),
+                                      Text('Destination', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
+                                      Text(shipment.destination.toDisplayString(), style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                    ],
+                                  ),
+                                )
+                              ],
+                            )
                           ],
                         ),
-                      ),
+                      ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.1),
 
-                      // ETA card
+                      const SizedBox(height: 16),
+
+                      // ETA Card
                       if (eta != null)
                         GlassmorphicCard(
-                          borderColor: GarudaColors.primary.withValues(alpha: 0.4),
+                          gradient: LinearGradient(
+                            colors: [GarudaColors.card, GarudaColors.cardHover],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderColor: GarudaColors.primary.withValues(alpha: 0.3),
                           child: Row(
                             children: [
                               Container(
-                                width: 44,
-                                height: 44,
+                                padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
                                   color: GarudaColors.primary.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(12),
+                                  shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.timer, color: GarudaColors.primaryLight, size: 22),
+                                child: const Icon(Icons.timer_outlined, color: GarudaColors.primaryLight, size: 24),
                               ),
-                              const SizedBox(width: 14),
+                              const SizedBox(width: 16),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    Text('Time to Destination', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
+                                    const SizedBox(height: 2),
                                     Text(
-                                      'Estimated Arrival',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 12,
-                                        color: GarudaColors.textMuted,
-                                      ),
-                                    ),
-                                    Text(
-                                      '${eta.etaMinutes} minutes',
-                                      style: GoogleFonts.outfit(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.w700,
-                                        color: GarudaColors.primaryLight,
-                                      ),
+                                      '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m',
+                                      style: GoogleFonts.spaceGrotesk(fontSize: 24, fontWeight: FontWeight.w700, color: GarudaColors.primaryLight),
                                     ),
                                   ],
                                 ),
@@ -186,120 +199,122 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
-                                    '${eta.remainingKm.toStringAsFixed(1)} km',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: GarudaColors.textPrimary,
-                                    ),
-                                  ),
-                                  Text(
-                                    'remaining',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      color: GarudaColors.textMuted,
-                                    ),
-                                  ),
+                                  Text('${eta.remainingKm.toStringAsFixed(1)} km', style: GoogleFonts.spaceGrotesk(fontSize: 18, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                  Text('remaining', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted)),
                                 ],
                               ),
                             ],
                           ),
-                        ),
+                        ).animate().fadeIn(delay: 100.ms).slideY(begin: 0.1),
 
-                      const SizedBox(height: 8),
-
-                      // Status timeline
+                      const SizedBox(height: 16),
+                      const SectionHeader(title: 'Timeline'),
                       GlassmorphicCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Status Timeline',
-                              style: GoogleFonts.outfit(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: GarudaColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            StatusTimeline(currentStatus: shipment.status),
-                          ],
-                        ),
-                      ),
+                        child: StatusTimeline(currentStatus: shipment.status),
+                      ).animate().fadeIn(delay: 200.ms),
 
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
 
-                      // Extra actions
                       if (_riskDetails == null && _integrity == null)
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _isLoadingExtra ? null : _fetchExtraDetails,
-                            icon: _isLoadingExtra
-                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
-                                : const Icon(Icons.analytics_outlined),
-                            label: const Text('Analyze Risk & Integrity'),
-                          ),
-                        ),
+                        GradientButton(
+                          label: 'AI Risk & Integrity Analysis',
+                          icon: Icons.auto_awesome,
+                          isLoading: _isLoadingExtra,
+                          onPressed: _fetchExtraDetails,
+                          gradient: GarudaGradients.consumer,
+                        ).animate().fadeIn(delay: 300.ms),
 
                       if (_riskDetails != null) ...[
-                        const SizedBox(height: 8),
+                        const SectionHeader(title: 'AI Risk Analysis'),
                         GlassmorphicCard(
-                          borderColor: GarudaColors.warning.withValues(alpha: 0.4),
+                          borderColor: _riskColor(_riskDetails!.riskLevel).withValues(alpha: 0.5),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Explainable Risk: ${_riskDetails!.riskLevel}', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.warning)),
-                              const SizedBox(height: 4),
-                              Text(_riskDetails!.explanation, style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textPrimary)),
-                              const SizedBox(height: 8),
-                              ..._riskDetails!.factors.map((f) => Text('• ${f.name}: ${f.detail}', style: GoogleFonts.inter(fontSize: 11, color: GarudaColors.textMuted))),
+                              Row(
+                                children: [
+                                  Icon(Icons.shield, color: _riskColor(_riskDetails!.riskLevel)),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Risk Level: ${_riskDetails!.riskLevel}', 
+                                    style: GoogleFonts.spaceGrotesk(fontSize: 16, fontWeight: FontWeight.w700, color: _riskColor(_riskDetails!.riskLevel)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(_riskDetails!.explanation, style: GoogleFonts.inter(fontSize: 14, color: GarudaColors.textPrimary)),
+                              const SizedBox(height: 16),
+                              ..._riskDetails!.factors.map((f) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.circle, size: 6, color: GarudaColors.textMuted),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: RichText(
+                                        text: TextSpan(
+                                          style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary),
+                                          children: [
+                                            TextSpan(text: '${f.name}: ', style: const TextStyle(fontWeight: FontWeight.w600, color: GarudaColors.textPrimary)),
+                                            TextSpan(text: f.detail),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
                             ],
                           ),
-                        ),
+                        ).animate().fadeIn().slideY(),
                       ],
 
                       if (_integrity != null) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 16),
+                        const SectionHeader(title: 'Package Integrity'),
                         GlassmorphicCard(
-                          borderColor: GarudaColors.info.withValues(alpha: 0.4),
+                          borderColor: GarudaColors.primary.withValues(alpha: 0.5),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Package Integrity Score: ${_integrity!.integrityScore}', style: GoogleFonts.outfit(fontWeight: FontWeight.w600, color: GarudaColors.info)),
-                              const SizedBox(height: 8),
-                              ..._integrity!.recommendations.map((r) => Text('• $r', style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textPrimary))),
+                              Row(
+                                children: [
+                                  const Icon(Icons.health_and_safety, color: GarudaColors.primaryLight),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    'Integrity Score: ${_integrity!.integrityScore.toStringAsFixed(1)}/100', 
+                                    style: GoogleFonts.spaceGrotesk(fontSize: 16, fontWeight: FontWeight.w700, color: GarudaColors.primaryLight),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              ..._integrity!.recommendations.map((r) => Padding(
+                                padding: const EdgeInsets.only(bottom: 6),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.check, size: 16, color: GarudaColors.success),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(r, style: GoogleFonts.inter(fontSize: 13, color: GarudaColors.textSecondary))),
+                                  ],
+                                ),
+                              )),
                             ],
                           ),
-                        ),
+                        ).animate().fadeIn().slideY(),
                       ],
+                      
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
     );
   }
 
-  Widget _infoRow(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, size: 16, color: GarudaColors.textMuted),
-        const SizedBox(width: 8),
-        Text(
-          '$label: ',
-          style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted),
-        ),
-        Expanded(
-          child: Text(
-            value,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: GarudaColors.textPrimary,
-            ),
-          ),
-        ),
-      ],
-    );
+  Color _riskColor(String level) {
+    if (level.toUpperCase() == 'HIGH') return GarudaColors.danger;
+    if (level.toUpperCase() == 'MEDIUM') return GarudaColors.warning;
+    return GarudaColors.success;
   }
 }

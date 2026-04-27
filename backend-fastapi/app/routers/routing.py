@@ -8,7 +8,7 @@ from app.models import (
     RerouteRequest, PrecheckRequest, SwitchModeRequest
 )
 from app.services.routing_strategy import get_strategy, get_all_strategies, calculate_haversine
-from app.services.gemini_service import analyze_risk, monitor_hazards, precheck_route
+from app.services.gemini_service import analyze_risk, monitor_hazards, precheck_route, check_mode_feasibility
 
 router = APIRouter(prefix="/v1", tags=["🧠 Routing Intelligence"])
 
@@ -98,8 +98,14 @@ async def compare_modes(req: CompareModesRequest):
     dist_km = calculate_haversine(req.origin, req.destination)
     strategies = get_all_strategies()
     
+    feasibility = check_mode_feasibility(req.origin, req.destination)
+    
     comparisons = []
     for mode_name, strategy in strategies.items():
+        base_mode = mode_name.split("_")[0]
+        if not feasibility.get(base_mode, True):
+            continue
+            
         est = strategy.estimate_cost(dist_km)
         comparisons.append(est)
     
@@ -111,7 +117,8 @@ async def compare_modes(req: CompareModesRequest):
         "destination": req.destination.to_dict(),
         "straight_line_km": round(dist_km, 2),
         "comparisons": comparisons,
-        "recommendation": comparisons[0]["mode"] if comparisons else None
+        "recommendation": comparisons[0]["mode"] if comparisons else None,
+        "feasibility_reason": feasibility.get("reason", "All valid modes compared")
     }
 
 
