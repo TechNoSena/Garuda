@@ -8,6 +8,12 @@ import '../../core/theme/app_theme.dart';
 import '../../core/models/shipment_model.dart' as models;
 import '../../core/widgets/glassmorphic_card.dart';
 
+class LocationResult {
+  final models.LatLng latLng;
+  final String name;
+  LocationResult(this.latLng, this.name);
+}
+
 class LocationPickerScreen extends StatefulWidget {
   final models.LatLng? initialLocation;
   
@@ -20,6 +26,7 @@ class LocationPickerScreen extends StatefulWidget {
 class _LocationPickerScreenState extends State<LocationPickerScreen> {
   GoogleMapController? _mapController;
   LatLng _selectedLocation = const LatLng(28.6139, 77.2090); // Default: New Delhi
+  String _selectedLocationName = "Selected Location";
   final String _googleMapsApiKey = "AIzaSyCGJyIbpXwOMG_vLlBilIWP0zzkNSysdWM";
   
   final TextEditingController _searchController = TextEditingController();
@@ -54,6 +61,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _selectedLocation = LatLng(position.latitude, position.longitude);
+      _selectedLocationName = "Current Location";
     });
 
     _mapController?.animateCamera(
@@ -94,9 +102,11 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
       if (data['status'] == 'OK') {
         final location = data['result']['geometry']['location'];
         final latLng = LatLng(location['lat'], location['lng']);
+        final address = data['result']['formatted_address'] ?? data['result']['name'] ?? 'Selected Location';
         
         setState(() {
           _selectedLocation = latLng;
+          _selectedLocationName = address;
           _placeSuggestions = [];
           _searchController.clear();
           FocusScope.of(context).unfocus();
@@ -241,7 +251,10 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                     label: 'Confirm Location',
                     icon: Icons.check,
                     onPressed: () {
-                      Navigator.pop(context, models.LatLng(lat: _selectedLocation.latitude, lng: _selectedLocation.longitude));
+                      Navigator.pop(context, LocationResult(
+                        models.LatLng(lat: _selectedLocation.latitude, lng: _selectedLocation.longitude),
+                        _selectedLocationName,
+                      ));
                     },
                     height: 56,
                   ),

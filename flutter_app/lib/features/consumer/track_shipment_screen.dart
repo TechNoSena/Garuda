@@ -12,6 +12,9 @@ import '../../core/models/intelligence_model.dart';
 import 'dart:convert';
 import 'package:flutter_client_sse/flutter_client_sse.dart';
 import '../../core/services/api_service.dart';
+import '../../core/models/analytics_model.dart';
+import '../../core/widgets/shared_widgets.dart';
+import '../shared/chat_screen.dart';
 
 class TrackShipmentScreen extends ConsumerStatefulWidget {
   final String shipmentId;
@@ -235,6 +238,19 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                     ),
                   ),
                 ),
+      floatingActionButton: shipment != null
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => ChatScreen(shipmentId: shipment.shipmentId)),
+                );
+              },
+              backgroundColor: GarudaColors.primary,
+              icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+              label: Text("Secure Chat", style: GoogleFonts.inter(fontWeight: FontWeight.w600, color: Colors.white)),
+            )
+          : null,
     );
   }
 }

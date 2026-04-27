@@ -31,7 +31,9 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   final _logisticsIdCtrl = TextEditingController(text: 'logistics-uid');
 
   LatLng _origin = const LatLng(lat: 22.5436, lng: 85.7969);
+  String _originName = "Origin Coordinates";
   LatLng _destination = const LatLng(lat: 22.7681, lng: 86.2007);
+  String _destinationName = "Destination Coordinates";
   TransportMode _selectedMode = TransportMode.roadCar;
   String _cargoType = 'general';
   
@@ -43,7 +45,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
   final List<String> _cargoTypes = ['general', 'fragile', 'perishable', 'hazardous', 'electronics'];
 
   Future<void> _pickLocation(bool isOrigin) async {
-    final result = await Navigator.push<LatLng>(
+    final result = await Navigator.push<LocationResult>(
       context,
       MaterialPageRoute(builder: (_) => LocationPickerScreen(
         initialLocation: isOrigin ? _origin : _destination,
@@ -51,8 +53,13 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     );
     if (result != null && mounted) {
       setState(() {
-        if (isOrigin) _origin = result;
-        else _destination = result;
+        if (isOrigin) {
+          _origin = result.latLng;
+          _originName = result.name;
+        } else {
+          _destination = result.latLng;
+          _destinationName = result.name;
+        }
         // reset checks
         _billingEstimate = null;
         _precheckResult = null;
@@ -69,7 +76,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     super.dispose();
   }
 
-  Future<void> _createShipment() async {
+  Future<void> _createShipment() async {  
     if (!_formKey.currentState!.validate()) return;
     final user = ref.read(authProvider).user;
     if (user == null) return;
@@ -171,12 +178,12 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildLocationPicker(true, 'Origin', _origin),
+                    _buildLocationPicker(true, 'Origin', _originName),
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Divider(color: GarudaColors.glassBorderStrong),
                     ),
-                    _buildLocationPicker(false, 'Destination', _destination),
+                    _buildLocationPicker(false, 'Destination', _destinationName),
                   ],
                 ),
               ).animate().fadeIn(delay: 50.ms),
@@ -251,6 +258,20 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Required';
                         if (!v.contains('@')) return 'Invalid email';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _logisticsIdCtrl,
+                      style: GoogleFonts.inter(color: GarudaColors.textPrimary),
+                      decoration: const InputDecoration(
+                        labelText: 'Logistics Partner ID',
+                        hintText: 'Enter Logistics Email or UID',
+                        prefixIcon: Icon(Icons.business_outlined),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Required';
                         return null;
                       },
                     ),
@@ -420,7 +441,7 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
     );
   }
 
-  Widget _buildLocationPicker(bool isOrigin, String label, LatLng value) {
+  Widget _buildLocationPicker(bool isOrigin, String label, String valueDisplay) {
     return InkWell(
       onTap: () => _pickLocation(isOrigin),
       child: Row(
@@ -444,8 +465,10 @@ class _CreateShipmentScreenState extends ConsumerState<CreateShipmentScreen> {
                 Text(label, style: GoogleFonts.inter(fontSize: 12, color: GarudaColors.textMuted)),
                 const SizedBox(height: 2),
                 Text(
-                  value.toDisplayString(),
+                  valueDisplay,
                   style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600, color: GarudaColors.textPrimary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

@@ -387,4 +387,20 @@ class ApiService {
     });
     return DemandSurgePrediction.fromJson(json);
   }
+
+  // --- Support & Chat ---
+  Future<Map<String, dynamic>> createChatBridge({
+    required String shipmentId,
+    required String requesterId,
+    required String requesterRole,
+    required String message,
+  }) async {
+    final json = await _post('/v1/support/chat-bridge', {
+      'shipment_id': shipmentId,
+      'requester_id': requesterId,
+      'requester_role': requesterRole,
+      'message': message,
+    });
+    return json;
+  }
 }

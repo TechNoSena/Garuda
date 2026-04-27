@@ -83,11 +83,21 @@ def create_shipment(req: CreateShipmentRequest) -> dict:
         return {"shipment_id": "mock-shipment-id", "status": ShipmentStatus.PENDING.value}
         
     try:
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        
+        # Resolve logistics email to UID if possible
+        logistics_id = req.logistics_id
+        if "@" in logistics_id:
+            users_ref = db.collection("users").where(filter=FieldFilter("email", "==", logistics_id)).stream()
+            for u in users_ref:
+                logistics_id = u.id
+                break
+                
         doc_ref = db.collection("shipments").document()
         shipment_data = {
             "shipment_id": doc_ref.id,
             "supplier_id": req.supplier_id,
-            "logistics_id": req.logistics_id,
+            "logistics_id": logistics_id,
             "delivery_man_id": None,
             "consumer_email": req.consumer_email,
             "origin": req.origin.to_dict(),
@@ -120,6 +130,12 @@ def update_shipment_status(shipment_id: str, status: ShipmentStatus, delivery_ma
     now = datetime.now(timezone.utc).isoformat()
     
     if delivery_man_id:
+        if "@" in delivery_man_id:
+            from google.cloud.firestore_v1.base_query import FieldFilter
+            users_ref = db.collection("users").where(filter=FieldFilter("email", "==", delivery_man_id)).stream()
+            for u in users_ref:
+                delivery_man_id = u.id
+                break
         updates["delivery_man_id"] = delivery_man_id
     
     # Automatic timestamp tracking

@@ -172,7 +172,104 @@ flowchart LR
     style Consumer fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
 ```
 
-### 4. UI Wireframe & Mock Flow
+### 4. Full End-to-End System Flow
+The complete lifecycle of a shipment across all four roles, driven by API interactions and AI intelligence.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    
+    actor Supplier
+    actor Logistics
+    actor Delivery
+    actor Consumer
+    participant FlutterApp
+    participant FastApiBackend
+    participant GeminiAI
+    participant GoogleMaps
+
+    %% --------------------------------------------------------
+    %% PHASE 1: SUPPLIER - CREATION & PRE-CHECK
+    %% --------------------------------------------------------
+    rect rgb(30, 40, 60)
+        note over Supplier,GoogleMaps: Phase 1: Supplier Creates Shipment
+        Supplier->>FlutterApp: Opens Create Shipment
+        Supplier->>FlutterApp: Taps "Origin" (Location Picker)
+        FlutterApp->>GoogleMaps: Fetch Places (Autocomplete)
+        GoogleMaps-->>FlutterApp: "Mumbai, Maharashtra"
+        Supplier->>FlutterApp: Confirms Location
+        FlutterApp->>FlutterApp: Stores `lat:19.07, lng:72.87`, displays "Mumbai"
+        
+        Supplier->>FlutterApp: Taps "Pre-flight Check"
+        FlutterApp->>FastApiBackend: POST /v1/routes/precheck (lat/lng)
+        FastApiBackend->>GeminiAI: Analyze weather, events, congestion
+        GeminiAI-->>FastApiBackend: Returns Predicted Risk Score
+        FastApiBackend-->>FlutterApp: Shows "Clear for Dispatch" (Score: 25)
+        
+        Supplier->>FlutterApp: Taps "Create Shipment"
+        FlutterApp->>FastApiBackend: POST /v1/shipments/ (origin/dest lat/lng)
+        FastApiBackend-->>FlutterApp: Shipment Created (Status: PENDING)
+    end
+
+    %% --------------------------------------------------------
+    %% PHASE 2: LOGISTICS - DISPATCH & ASSIGNMENT
+    %% --------------------------------------------------------
+    rect rgb(40, 30, 60)
+        note over Logistics,FastApiBackend: Phase 2: Logistics Fleet Assignment
+        Logistics->>FlutterApp: Views Logistics Dashboard
+        FlutterApp->>FastApiBackend: GET /v1/shipments/user/{uid}?role=LOGISTICS
+        FastApiBackend-->>FlutterApp: Returns PENDING shipments
+        Logistics->>FlutterApp: Assigns Driver ID to Shipment
+        FlutterApp->>FastApiBackend: PATCH /v1/shipments/{id}/assign
+        FastApiBackend-->>FlutterApp: Status Updated (Status: ASSIGNED)
+    end
+
+    %% --------------------------------------------------------
+    %% PHASE 3: DELIVERY - LIVE MONITORING & DRIVING
+    %% --------------------------------------------------------
+    rect rgb(30, 50, 40)
+        note over Delivery,GeminiAI: Phase 3: Delivery Live Ride & Rerouting
+        Delivery->>FlutterApp: Opens Active Ride Screen
+        Delivery->>FlutterApp: Taps "Start Ride"
+        FlutterApp->>FastApiBackend: PATCH /v1/shipments/{id}/status (Status: DISPATCHED)
+        
+        loop Every 5 Minutes
+            FlutterApp->>FastApiBackend: PATCH /v1/shipments/{id}/location (Live GPS Ping)
+            FastApiBackend->>FastApiBackend: Updates tracking database
+            
+            FlutterApp->>FastApiBackend: POST /v1/ride/monitor
+            FastApiBackend->>GeminiAI: Scan path ahead for live roadblocks/storms
+            alt Path Clear
+                GeminiAI-->>FastApiBackend: Severity 0.0
+                FastApiBackend-->>FlutterApp: "Path looks clear."
+            else Hazard Detected
+                GeminiAI-->>FastApiBackend: Severity 0.8 (Accident ahead)
+                FastApiBackend-->>FlutterApp: "REROUTE_SUGGESTED!"
+                FlutterApp->>Delivery: Displays Warning Overlay & Alternate Route
+            end
+        end
+        Delivery->>FlutterApp: Arrives at destination, taps "Complete"
+        FlutterApp->>FastApiBackend: PATCH status to DELIVERED
+    end
+
+    %% --------------------------------------------------------
+    %% PHASE 4: CONSUMER - LIVE TRACKING & EXPLANATIONS
+    %% --------------------------------------------------------
+    rect rgb(60, 40, 30)
+        note over Consumer,GeminiAI: Phase 4: Consumer Live Tracking
+        Consumer->>FlutterApp: Enters Tracking ID
+        FlutterApp->>FastApiBackend: GET /v1/shipments/{id}
+        FastApiBackend-->>FlutterApp: Returns status, live location, and integrity score
+        
+        Consumer->>FlutterApp: Taps "Why is this delayed?" (Explainable AI)
+        FlutterApp->>FastApiBackend: GET /v1/shipments/{id}/risk-details
+        FastApiBackend->>GeminiAI: Request detailed breakdown of risk factors
+        GeminiAI-->>FastApiBackend: "Rain causing 15 min delay"
+        FastApiBackend-->>FlutterApp: Displays AI Risk Explanation to Consumer
+    end
+```
+
+### 5. UI Wireframe & Mock Flow
 Logical layout of the Omnichannel Flutter portals.
 
 ```mermaid

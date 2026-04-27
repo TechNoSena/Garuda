@@ -14,6 +14,9 @@ import '../../core/widgets/loading_shimmer.dart';
 import '../../core/widgets/mode_icon.dart';
 import '../../core/widgets/risk_badge.dart';
 import '../../core/models/risk_model.dart';
+import '../../core/models/routing_model.dart';
+import '../../core/models/intelligence_model.dart';
+import '../shared/chat_screen.dart';
 
 class ActiveRideScreen extends ConsumerStatefulWidget {
   final String shipmentId;
@@ -100,6 +103,17 @@ class _ActiveRideScreenState extends ConsumerState<ActiveRideScreen> {
             Navigator.pop(context);
           },
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline, color: GarudaColors.primaryLight),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => ChatScreen(shipmentId: widget.shipmentId, driverName: "Consumer")),
+              );
+            },
+          ),
+        ],
       ),
       body: shipment == null
           ? const Padding(padding: EdgeInsets.all(24), child: LoadingShimmer(count: 3))
