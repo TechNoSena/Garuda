@@ -35,6 +35,7 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
   int? _etaMinutes;
   double? _remainingKm;
   String? _riskAlertMessage;
+  int? _riskScore;
   
   @override
   void initState() {
@@ -71,6 +72,9 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
               // Check for risk alerts
               if (data['risk_alert'] != null) {
                 _riskAlertMessage = data['risk_alert']['message'];
+                if (data['risk_alert']['risk_score'] != null) {
+                  _riskScore = (data['risk_alert']['risk_score'] as num).toInt();
+                }
               }
             });
           } catch (_) {}
@@ -163,6 +167,14 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                           driverLocation: _driverLocation ?? shipment.currentLocation,
                           height: 240,
                           etaDisplay: etaDisplay,
+                          onDirectionsInfo: (eta, dist, mins) {
+                            if (mounted && _etaMinutes == null) {
+                              setState(() {
+                                _etaMinutes = mins;
+                                _remainingKm = double.tryParse(dist.replaceAll(RegExp(r'[^0-9.]'), ''));
+                              });
+                            }
+                          },
                         ).animate().fadeIn().slideY(begin: 0.1),
 
                         const SizedBox(height: 16),
@@ -180,7 +192,18 @@ class _TrackShipmentScreenState extends ConsumerState<TrackShipmentScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text('Route Advisory', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: GarudaColors.warning)),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text('Route Advisory', style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.w700, color: GarudaColors.warning)),
+                                          if (_riskScore != null)
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(color: GarudaColors.warning.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(8)),
+                                              child: Text('$_riskScore / 100', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, color: GarudaColors.warning)),
+                                            )
+                                        ],
+                                      ),
                                       const SizedBox(height: 2),
                                       Text(_riskAlertMessage!, style: GoogleFonts.inter(fontSize: 12, color: textColor)),
                                     ],

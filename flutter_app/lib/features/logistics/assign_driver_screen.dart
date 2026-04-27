@@ -23,7 +23,7 @@ class _AssignDriverScreenState extends ConsumerState<AssignDriverScreen> {
   final _driverIdCtrl = TextEditingController();
   DeliveryType _selectedDeliveryType = DeliveryType.lastMile;
   List<Shipment> _coupleCandidates = [];
-  List<String> _selectedCoupleIds = [];
+  final List<String> _selectedCoupleIds = [];
   bool _isLoadingCandidates = false;
 
   @override

@@ -1,6 +1,4 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/shipment_model.dart';
 import '../models/routing_model.dart';
@@ -9,7 +7,6 @@ import '../models/compare_model.dart';
 import '../models/monitor_model.dart';
 import '../models/analytics_model.dart';
 import '../models/intelligence_model.dart';
-import '../models/notification_model.dart';
 import 'package:flutter_client_sse/constants/sse_request_type_enum.dart';
 import 'package:flutter_client_sse/flutter_client_sse.dart';
 
@@ -91,8 +88,8 @@ class ApiService {
     'password': password,
     'name': name,
     'role': role,
-    if (companyName != null) 'company_name': companyName,
-    if (phone != null) 'phone': phone,
+    'company_name': ?companyName,
+    'phone': ?phone,
   });
 
   Future<Map<String, dynamic>> login({
@@ -126,8 +123,8 @@ class ApiService {
     'origin': origin.toJson(),
     'destination': destination.toJson(),
     'route_mode': routeMode,
-    if (packageDescription != null) 'package_description': packageDescription,
-    if (weightKg != null) 'weight_kg': weightKg,
+    'package_description': ?packageDescription,
+    'weight_kg': ?weightKg,
   });
 
   Future<Shipment> getShipment(String id) async {
@@ -238,7 +235,7 @@ class ApiService {
       'origin': origin.toJson(),
       'destination': destination.toJson(),
       'mode': mode,
-      if (routeData != null) 'route_data': routeData,
+      'route_data': ?routeData,
     });
     return RiskAnalysis.fromJson(json);
   }
@@ -268,7 +265,7 @@ class ApiService {
       'current_location': currentLocation.toJson(),
       'destination': destination.toJson(),
       'mode': mode,
-      if (shipmentId != null) 'shipment_id': shipmentId,
+      'shipment_id': ?shipmentId,
     });
     return RideMonitorResponse.fromJson(json);
   }
@@ -303,7 +300,7 @@ class ApiService {
     'origin': origin.toJson(),
     'destination': destination.toJson(),
     'mode': mode,
-    if (dispatchTime != null) 'dispatch_time': dispatchTime,
+    'dispatch_time': ?dispatchTime,
     'cargo_type': cargoType,
   });
 
@@ -319,7 +316,7 @@ class ApiService {
     'destination': destination.toJson(),
     'mode': mode,
     'cargo_type': cargoType,
-    if (weightKg != null) 'weight_kg': weightKg,
+    'weight_kg': ?weightKg,
   });
 
   Future<Map<String, dynamic>> detectDisruptions({

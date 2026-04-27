@@ -1,4 +1,3 @@
-import 'routing_model.dart';
 import 'shipment_model.dart';
 
 

@@ -10,7 +10,6 @@ import '../../core/providers/shipment_provider.dart';
 import '../../core/providers/routing_provider.dart';
 import '../../core/widgets/glassmorphic_card.dart';
 import '../../core/widgets/garuda_app_bar.dart';
-import '../../core/widgets/risk_badge.dart';
 import '../../core/services/api_service.dart';
 import '../../core/models/analytics_model.dart';
 import 'compare_modes_screen.dart';

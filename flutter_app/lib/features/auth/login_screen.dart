@@ -328,8 +328,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> with SingleTickerProv
                           PageRouteBuilder(
                             transitionDuration: const Duration(milliseconds: 500),
                             reverseTransitionDuration: const Duration(milliseconds: 400),
-                            pageBuilder: (_, __, ___) => const RegisterScreen(),
-                            transitionsBuilder: (_, animation, __, child) {
+                            pageBuilder: (_, _, _) => const RegisterScreen(),
+                            transitionsBuilder: (_, animation, _, child) {
                               return FadeTransition(
                                 opacity: animation,
                                 child: SlideTransition(

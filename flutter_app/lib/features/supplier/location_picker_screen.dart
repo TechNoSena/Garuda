@@ -215,7 +215,7 @@ class _LocationPickerScreenState extends State<LocationPickerScreen> {
                       child: ListView.separated(
                         shrinkWrap: true,
                         itemCount: _placeSuggestions.length,
-                        separatorBuilder: (_, __) => const Divider(height: 1, color: GarudaColors.glassBorder),
+                        separatorBuilder: (_, _) => const Divider(height: 1, color: GarudaColors.glassBorder),
                         itemBuilder: (context, index) {
                           final place = _placeSuggestions[index];
                           return ListTile(

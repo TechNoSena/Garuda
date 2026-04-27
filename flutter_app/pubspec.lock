@@ -150,6 +150,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
+  flutter_overlay_window:
+    dependency: "direct main"
+    description:
+      name: flutter_overlay_window
+      sha256: "17988420249da68e421d1b44b511e6113d3de7a9e52c3fbd6d99730508af4580"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.5.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -158,6 +166,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.34"
+  flutter_polyline_points:
+    dependency: "direct main"
+    description:
+      name: flutter_polyline_points
+      sha256: c775fe59fbcf1f925d611c039555c7f58ed6d9411747b7a2915bbd9c5e730a51
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.0"
   flutter_riverpod:
     dependency: "direct main"
     description:

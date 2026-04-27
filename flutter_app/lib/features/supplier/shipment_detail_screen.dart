@@ -138,6 +138,14 @@ class _ShipmentDetailScreenState extends ConsumerState<ShipmentDetailScreen> {
                           etaDisplay: _etaMinutes != null
                               ? '${_etaMinutes! ~/ 60}h ${_etaMinutes! % 60}m (~${_remainingKm?.toStringAsFixed(1) ?? '?'} km)'
                               : (eta != null ? '${eta.etaMinutes ~/ 60}h ${eta.etaMinutes % 60}m' : null),
+                          onDirectionsInfo: (etaText, dist, mins) {
+                            if (mounted && _etaMinutes == null) {
+                              setState(() {
+                                _etaMinutes = mins;
+                                _remainingKm = double.tryParse(dist.replaceAll(RegExp(r'[^0-9.]'), ''));
+                              });
+                            }
+                          },
                         ).animate().fadeIn().slideY(begin: 0.1),
                         const SizedBox(height: 16),
                       ],
