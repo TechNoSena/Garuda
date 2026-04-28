@@ -31,7 +31,7 @@
 
   > **Built for the Google Solution Challenge 2026** · Theme: *Smart Supply Chains*
   > 
-  > *By Team TechNoSena*
+  > *By Team DietCoke*
 
 </div>
 
