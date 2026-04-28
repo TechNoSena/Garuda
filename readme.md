@@ -1,423 +1,532 @@
 <div align="center">
-  <img src="flutter_app/garuda_logo.png" alt="Project Garuda" width="120" onerror="this.src='https://www.gstatic.com/images/branding/product/2x/google_cloud_64dp.png'"/>
-  
-  # Project Garuda
-  [![Build Flutter APK](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml/badge.svg?branch=master)](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml)
+  <img src="flutter_app/garuda_logo.png" alt="Project Garuda Logo" width="140"/>
 
-  **Smart Supply Chains: Resilient Logistics & Dynamic Supply Chain Optimization**
+  # 🦅 Project Garuda
+
+  ### *Smart Supply Chains: Resilient Logistics & Dynamic Supply Chain Optimization*
 
   <p align="center">
-    <a href="https://cloud.google.com/"><img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=for-the-badge&logo=google-cloud&logoColor=white" alt="Google Cloud"></a>
-    <a href="https://flutter.dev/"><img src="https://img.shields.io/badge/Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white" alt="Flutter"></a>
-    <a href="https://fastapi.tiangolo.com/"><img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI"></a>
-    <a href="https://deepmind.google/technologies/gemini/"><img src="https://img.shields.io/badge/Gemini_2.5-EA4335?style=for-the-badge&logo=googlegemini&logoColor=white" alt="Gemini AI"></a>
-    <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-34A853?style=for-the-badge" alt="License: MIT"></a>
+    <a href="https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml">
+      <img src="https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml/badge.svg?branch=master" alt="Build Flutter APK"/>
+    </a>
+    <img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=flat-square&logo=google-cloud&logoColor=white" alt="Google Cloud"/>
+    <img src="https://img.shields.io/badge/Gemini_2.5_Pro-EA4335?style=flat-square&logo=googlegemini&logoColor=white" alt="Gemini AI"/>
+    <img src="https://img.shields.io/badge/Flutter-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter"/>
+    <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI"/>
+    <img src="https://img.shields.io/badge/Firebase-FFCA28?style=flat-square&logo=firebase&logoColor=black" alt="Firebase"/>
+    <img src="https://img.shields.io/badge/License-MIT-34A853?style=flat-square" alt="MIT License"/>
   </p>
 
-  *Built for the **Google Solution Challenge 2026**.*
+  <p align="center">
+    <a href="https://github.com/TechNoSena/Garuda/releases/download/beta/Garurda-beta-v1.0.0.apk"><strong>📲 Download APK (Beta v1.0.0)</strong></a>
+    &nbsp;·&nbsp;
+    <a href="https://garuda-backend-437904093333.asia-south1.run.app/scalar"><strong>📡 Live API Docs</strong></a>
+    &nbsp;·&nbsp;
+    <a href="https://youtu.be/Alz17zhRqGw"><strong>🎬 Demo Video</strong></a>
+    &nbsp;·&nbsp;
+    <a href="https://youtu.be/vWFgSMFtTHY"><strong>🖼️ Prototype Walkthrough</strong></a>
+  </p>
+
+  <br/>
+
+  > **Built for the Google Solution Challenge 2026** · Theme: *Smart Supply Chains*
+  > 
+  > *By Team TechNoSena*
+
 </div>
+
+---
+
+## 📌 Table of Contents
+
+1. [Problem Statement](#-problem-statement)
+2. [Our Solution](#-our-solution)
+3. [Live Demo & Downloads](#-live-demo--downloads)
+4. [Architecture](#-system-architecture)
+5. [Intelligent Process Flow](#-intelligent-process-flow)
+6. [Omni-Modal Transport Coverage](#-omni-modal-transport-coverage)
+7. [Multi-Actor System (Use Cases)](#-multi-actor-system)
+8. [End-to-End Sequence Flow](#-end-to-end-sequence-flow)
+9. [Key Features](#-key-features)
+10. [Google Ecosystem Integration](#-google-ecosystem-integration)
+11. [Sustainable Impact (UN SDGs)](#-sustainable-impact-un-sdgs)
+12. [Tech Stack](#-tech-stack)
+13. [Getting Started](#-getting-started)
+14. [Demo Credentials](#-demo-credentials)
+15. [License](#-license)
 
 ---
 
 ## 🎯 Problem Statement
 
-**Smart Supply Chains: Resilient Logistics and Dynamic Supply Chain Optimization**
+> **Theme:** Smart Supply Chains
+> **Problem:** Resilient Logistics and Dynamic Supply Chain Optimization
 
-Modern global supply chains manage millions of concurrent shipments across highly complex and inherently volatile transportation networks. Critical transit disruptions ranging from sudden weather events to hidden operational bottlenecks are chronically identified only *after* delivery timelines are already compromised.
+Modern global supply chains manage **millions of concurrent shipments** across highly complex and inherently volatile transportation networks. Critical transit disruptions — ranging from sudden weather events to hidden operational bottlenecks — are chronically identified **only after delivery timelines are already compromised**.
 
-### 💡 The Objective
-Design a scalable system capable of continuously analyzing multifaceted transit data to preemptively detect and flag potential supply chain disruptions. Formulate dynamic mechanisms that instantly execute or recommend highly optimized route adjustments before localized bottlenecks cascade into broader delays.
-
----
-
-## 📋 Table of Contents
-1. [🎯 Problem Statement & Objective](#-problem-statement)
-2. [✈️ Omni-Modal Approach](#-omni-modal-approach)
-3. [📊 System Diagrams & Engineering](#-system-diagrams--engineering)
-    - [Architecture Diagram](#1-system-architecture)
-    - [Process Flow](#2-intelligent-process-flow)
-    - [Use Case Diagram](#3-multi-actor-use-cases)
-    - [Wireframe & Screen Flow](#4-ui-wireframe--mock-flow)
-4. [🌟 Key Features](#-key-features)
-5. [🌱 Sustainable Impact (UN SDGs)](#-sustainable-impact-un-sdgs)
-6. [🛠️ Tech Stack & Google Cloud Services](#️-tech-stack--google-cloud-services)
-7. [🚀 Getting Started](#-getting-started)
-8. [📜 License](#-license)
+### The Objective
+Design a scalable system capable of **continuously analyzing multifaceted transit data** to preemptively detect and flag potential supply chain disruptions. Formulate dynamic mechanisms that **instantly execute or recommend highly optimized route adjustments** before localized bottlenecks cascade into broader delays.
 
 ---
 
-## ✈️🚢🚆🚚 Omni-Modal Approach
+## 💡 Our Solution
 
-Project Garuda is built to orchestrate and protect shipments across **all mediums of transport**. It continuously monitors networks and intelligently recommends mode switching when catastrophic disruptions occur.
+**Project Garuda** is a full-stack, AI-powered supply chain orchestration platform that transforms logistics from *reactive damage control* into *proactive, preemptive resilience*. It continuously fuses live intelligence streams — weather, traffic, news, historical data — and uses **Gemini 2.5 Pro** as a reasoning engine to compute disruption risk scores every 5 minutes per active shipment.
 
-| Transport Mode | Volatility Monitored | Optimization Strategy |
-| :--- | :--- | :--- |
-| ✈️ **Flight / Air** | Air traffic control delays, severe weather cells. | Optimal air-corridor routing; preemptive shifting to ground freight. |
-| 🚢 **Maritime / Ships** | Port congestion, maritime storms, canal blockages. | ETA adjustment, alternative port docking, dynamic demurrage mitigation. |
-| 🚆 **Rail / Freight** | Track maintenance, derailments, signaling failures. | Predictive delay modeling via BigQuery; terminal congestion avoidance. |
-| 🚚 **Road / Trucks** | Highway accidents, roadblocks, heavy rain. | Real-time rerouting via Google Routes API using `avoid_waypoints`. |
-| 🛵 **Last-Mile / Delivery** | Hyper-local traffic spikes, flooded streets, fatigue. | TSP (Traveling Salesman Problem) multi-stop optimization; micro-routing. |
+When risk crosses a critical threshold, Garuda **automatically reroutes** the shipment via the Google Routes API — 15 to 30 minutes before the driver reaches the hazard zone — preventing cascade failures before they begin.
+
+The platform serves **four distinct stakeholder roles** (Supplier, Logistics Partner, Delivery Driver, Consumer) through a single unified Flutter application, backed by a scalable FastAPI engine deployed on Google Cloud Run.
+
+| Metric | Impact |
+|:---|:---|
+| ⛽ Fuel Consumption Reduction | Up to **13.6%** |
+| ⏱️ Disruption Detection Lead Time | **15–30 minutes** before impact |
+| 🗺️ Transport Modes Covered | **5** (Air, Maritime, Rail, Road, Last-Mile) |
+| 👥 Stakeholder Portals | **4** unified in one Flutter app |
+| ☁️ Deployment | Google Cloud Run (serverless, auto-scaling) |
 
 ---
 
-## 📊 System Diagrams & Engineering
+## 🚀 Live Demo & Downloads
 
-### 1. System Architecture
-Garuda employs an **Agentic RAG** architecture orchestrated via FastAPI, serving a unified Flutter application suite.
+| Resource | Link |
+|:---|:---|
+| 📲 **Android APK (Beta v1.0.0)** | [Download from GitHub Releases](https://github.com/TechNoSena/Garuda/releases/download/beta/Garurda-beta-v1.0.0.apk) |
+| 📡 **Live Backend API Docs** | [Scalar Interactive Docs](https://garuda-backend-437904093333.asia-south1.run.app/scalar) |
+| 🎬 **Full Demo Video** | [Watch on YouTube](https://youtu.be/Alz17zhRqGw) |
+| 🖼️ **Prototype Walkthrough** | [Watch on YouTube](https://youtu.be/vWFgSMFtTHY) |
+| 🏗️ **CI/CD Build Pipeline** | [GitHub Actions](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml) |
+
+---
+
+## 🏗️ System Architecture
+
+Garuda employs an **Agentic RAG (Retrieval-Augmented Generation)** architecture orchestrated by FastAPI, serving a unified Flutter multi-portal application.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#64748B", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
 graph TD
     classDef default fill:#1E293B,stroke:#334155,stroke-width:1px,color:#F8FAFC;
+    classDef google fill:#0F172A,stroke:#EA4335,stroke-width:2px,color:#F8FAFC;
+    classDef infra fill:#0F172A,stroke:#34A853,stroke-width:2px,color:#F8FAFC;
 
-    subgraph Frontend Client Layer
-        A[📱 Flutter Multi-Portal App<br>iOS / Android / Web]
+    subgraph FL["📱 Frontend — Flutter Multi-Portal App"]
+        A1["🏭 Supplier Portal"]
+        A2["🏢 Logistics Admin"]
+        A3["🚚 Driver App"]
+        A4["👤 Consumer App"]
     end
 
-    subgraph Core Orchestrator
-        B(⚙️ FastAPI Backend<br>API Gateway)
-        C{🧠 Agentic RAG Engine<br>Risk & Disruptions}
+    subgraph BE["⚙️ Core Orchestrator — FastAPI on Cloud Run"]
+        B1["API Gateway & Router"]
+        B2["🧠 Agentic RAG Engine"]
+        B3["Risk Scoring Engine"]
     end
 
-    subgraph Google Cloud Intelligence Ecosystem
-        D[🗺️ Google Routes API]
-        E[✨ Gemini 2.5 Pro]
-        F[🔍 Programmable Search]
-        G[📊 BigQuery + Vertex AI]
+    subgraph GCP["☁️ Google Cloud Intelligence Ecosystem"]
+        C1["🗺️ Google Routes API"]
+        C2["✨ Gemini 2.5 Pro"]
+        C3["🔍 Programmable Search API"]
+        C4["📊 BigQuery + Vertex AI"]
+        C5["🔥 Firebase Auth + Firestore"]
     end
 
-    A <-->|REST / SSE Streams| B
-    B <--> C
-    C <-->|Navigation & Waypoints| D
-    C <-->|Context & Severity Parsing| E
-    C <-->|Live News & Weather| F
-    C <-->|Historical Delay Patterns| G
+    FL <-->|"REST / SSE Streams"| B1
+    B1 <--> B2
+    B2 <--> B3
+    B2 <-->|"Navigation & Waypoints"| C1
+    B2 <-->|"Context & Severity Parsing"| C2
+    B2 <-->|"Live News & Weather"| C3
+    B2 <-->|"Historical Delay Patterns"| C4
+    FL <-->|"Auth & Real-time Sync"| C5
 
-    style A fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
-    style B fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
-    style C fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
-    style D fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
-    style E fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
-    style F fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
-    style G fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    class C1,C2,C3,C4 google
+    class C5,B1,B2,B3 infra
 ```
 
-### 2. Intelligent Process Flow
-How Garuda continuously analyzes data to preemptively detect disruptions before they escalate.
+---
+
+## 🔄 Intelligent Process Flow
+
+How Garuda continuously analyzes data to **preemptively detect disruptions** before they escalate into delays.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#64748B", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
 flowchart TD
-    classDef default fill:#1E293B,stroke:#334155,stroke-width:1px,color:#F8FAFC;
+    classDef default fill:#1E293B,stroke:#334155,color:#F8FAFC;
 
-    1([Start: Shipment Dispatched]) --> 2[Extract Route Waypoints via Routes API]
-    2 --> 3[Continuous Live Monitoring Cycle]
-    
-    subgraph Data Analysis Engine
-        3 --> 4{Gather Multifaceted Data}
-        4 -->|Historical| 5[Query BigQuery & Vertex AI]
-        4 -->|Live Web| 6[Scrape Local News/Weather]
-        5 --> 7[Gemini 2.5 Pro Context Analysis]
-        6 --> 7
+    S([🚀 Shipment Dispatched]) --> W[Extract Route Waypoints\nvia Google Routes API]
+    W --> M[⏱️ Continuous 5-Min Monitor Cycle]
+
+    subgraph DAE["🧠 Data Analysis Engine"]
+        M --> G{Gather Multi-Source Data}
+        G -->|Historical Patterns| BQ[BigQuery + Vertex AI\nDelay Pattern Query]
+        G -->|Live Intelligence| PS[Google Programmable Search\nNews & Weather Scrape]
+        BQ --> GM[Gemini 2.5 Pro\nContext Synthesis & Scoring]
+        PS --> GM
     end
-    
-    7 --> 8{Calculate Risk Score}
-    8 -->|Score < 65: Safe| 9[Proceed Normally]
-    9 --> 3
-    
-    8 -->|Score >= 65: Critical| 10[Preemptive Reroute Triggered]
-    10 --> 11[Inject 'avoid_waypoints' to Routes API]
-    11 --> 12[Compute Optimized Alternate Path]
-    12 --> 13[Push AI-Explained Notification to Stakeholders]
-    13 --> 14([End: Cascade Prevented])
 
-    style 1 fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
-    style 14 fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
-    style 10 fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
+    GM --> RS{🎯 Risk Score\nCalculated}
+    RS -->|Score < 65: SAFE| OK[✅ Proceed Normally]
+    OK --> M
+    RS -->|Score ≥ 65: CRITICAL| RR[🚨 Preemptive Reroute Triggered]
+    RR --> AW[Inject avoid_waypoints\nto Routes API]
+    AW --> AP[Compute Optimized\nAlternate Path]
+    AP --> NF[📲 AI Explanation\nPushed to All Stakeholders]
+    NF --> E([✅ Cascade Prevented])
+
+    style S fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
+    style E fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    style RR fill:#0F172A,stroke:#EA4335,stroke-width:2px,color:#F8FAFC
+    style GM fill:#0F172A,stroke:#FBBC04,stroke-width:2px,color:#F8FAFC
 ```
 
-### 3. Multi-Actor Use Cases
-The system is built for the entire logistics ecosystem.
+---
+
+## ✈️🚢🚆🚚🛵 Omni-Modal Transport Coverage
+
+Project Garuda is built to orchestrate and protect shipments across **all five mediums of transport**, continuously monitoring for mode-specific volatility and intelligently recommending mode-switching when catastrophic disruptions occur.
+
+| Mode | Volatility Monitored | Garuda's Response |
+|:---|:---|:---|
+| ✈️ **Air Freight** | Air traffic delays, severe weather cells, airport closures | Optimal air-corridor routing; preemptive shift to ground freight |
+| 🚢 **Maritime / Ships** | Port congestion, maritime storms, canal blockages | ETA adjustment, alternate port docking, demurrage mitigation |
+| 🚆 **Rail / Freight** | Track maintenance, derailments, signaling failures | Predictive delay modeling via BigQuery; terminal congestion avoidance |
+| 🚚 **Road / Trucks** | Highway accidents, roadblocks, severe rain | Real-time rerouting via Routes API `avoid_waypoints` |
+| 🛵 **Last-Mile Delivery** | Hyper-local traffic spikes, flooded streets, driver fatigue | TSP multi-stop optimization; AI-driven micro-routing |
+
+---
+
+## 👥 Multi-Actor System
+
+Garuda serves the **entire logistics ecosystem** through a single application with role-based portals.
 
 ```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "lineColor": "#64748B", "clusterBkg": "#0F172A", "clusterBorder": "#334155"}}}%%
 flowchart LR
-    classDef default fill:#1E293B,stroke:#334155,stroke-width:1px,color:#F8FAFC;
+    classDef actor fill:#0F172A,stroke-width:2px,color:#F8FAFC;
 
-    subgraph Actors
-        Supplier(((🏭 Supplier)))
-        Logistics(((🏢 Logistics Partner)))
-        Driver(((🚚 Driver)))
-        Consumer(((👤 Consumer)))
-    end
+    Supplier(["🏭 Supplier"])
+    Logistics(["🏢 Logistics Partner"])
+    Driver(["🚚 Delivery Driver"])
+    Consumer(["👤 Consumer"])
 
-    subgraph "Project Garuda System"
-        UC1([Create Shipment])
-        UC2([Compare Transport Modes])
-        UC3([Assign Fleet & Driver])
-        UC4([Receive Preemptive Reroutes])
-        UC5([Log Exceptions/Incidents])
-        UC6([Live ETA & Reason Tracking])
+    subgraph GS["🦅 Project Garuda System"]
+        UC1(["📦 Create Shipment"])
+        UC2(["⚖️ Compare Transport Modes"])
+        UC3(["🚗 Assign Fleet & Driver"])
+        UC4(["🚨 Receive AI Reroute Alerts"])
+        UC5(["🚧 Log Exceptions & Incidents"])
+        UC6(["📍 Live ETA & Map Tracking"])
+        UC7(["💬 AI Delay Explanations"])
+        UC8(["📊 Analytics Dashboard"])
     end
 
     Supplier --> UC1
     Supplier --> UC2
     Logistics --> UC2
     Logistics --> UC3
+    Logistics --> UC8
     Driver --> UC4
     Driver --> UC5
     Consumer --> UC6
+    Consumer --> UC7
 
-    style Supplier fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
-    style Logistics fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
-    style Driver fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
-    style Consumer fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
+    class Supplier actor
+    class Logistics actor
+    class Driver actor
+    class Consumer actor
+
+    style Supplier stroke:#10B981
+    style Logistics stroke:#EA4335
+    style Driver stroke:#FBBC04
+    style Consumer stroke:#38BDF8
 ```
 
-### 4. Full End-to-End System Flow
-The complete lifecycle of a shipment across all four roles, driven by API interactions and AI intelligence.
+---
+
+## 🔗 End-to-End Sequence Flow
+
+The complete lifecycle of a shipment across all four roles, driven by real API interactions and AI intelligence.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    
+
     actor Supplier
     actor Logistics
-    actor Delivery
+    actor Driver
     actor Consumer
-    participant FlutterApp
-    participant FastApiBackend
-    participant GeminiAI
-    participant GoogleMaps
+    participant App as 📱 Flutter App
+    participant API as ⚙️ FastAPI Backend
+    participant Gemini as ✨ Gemini 2.5 Pro
+    participant Maps as 🗺️ Routes API
+    participant DB as 🔥 Firestore
 
-    %% --------------------------------------------------------
-    %% PHASE 1: SUPPLIER - CREATION & PRE-CHECK
-    %% --------------------------------------------------------
-    rect rgb(30, 40, 60)
-        note over Supplier,GoogleMaps: Phase 1: Supplier Creates Shipment
-        Supplier->>FlutterApp: Opens Create Shipment
-        Supplier->>FlutterApp: Taps "Origin" (Location Picker)
-        FlutterApp->>GoogleMaps: Fetch Places (Autocomplete)
-        GoogleMaps-->>FlutterApp: "Mumbai, Maharashtra"
-        Supplier->>FlutterApp: Confirms Location
-        FlutterApp->>FlutterApp: Stores `lat:19.07, lng:72.87`, displays "Mumbai"
-        
-        Supplier->>FlutterApp: Taps "Pre-flight Check"
-        FlutterApp->>FastApiBackend: POST /v1/routes/precheck (lat/lng)
-        FastApiBackend->>GeminiAI: Analyze weather, events, congestion
-        GeminiAI-->>FastApiBackend: Returns Predicted Risk Score
-        FastApiBackend-->>FlutterApp: Shows "Clear for Dispatch" (Score: 25)
-        
-        Supplier->>FlutterApp: Taps "Create Shipment"
-        FlutterApp->>FastApiBackend: POST /v1/shipments/ (origin/dest lat/lng)
-        FastApiBackend-->>FlutterApp: Shipment Created (Status: PENDING)
+    rect rgb(15, 30, 50)
+        note over Supplier,DB: Phase 1 — Supplier Creates & Pre-checks Shipment
+        Supplier->>App: Opens Create Shipment
+        App->>Maps: Places Autocomplete (Origin/Dest)
+        Maps-->>App: Coordinates returned
+        Supplier->>App: Taps "Pre-flight Check"
+        App->>API: POST /v1/routes/precheck
+        API->>Gemini: Analyze weather, events, congestion
+        Gemini-->>API: Risk Score: 25 (SAFE)
+        API-->>App: "Clear for Dispatch ✅"
+        Supplier->>App: Confirms & Creates Shipment
+        App->>API: POST /v1/shipments/
+        API->>DB: Persist (Status: PENDING)
     end
 
-    %% --------------------------------------------------------
-    %% PHASE 2: LOGISTICS - DISPATCH & ASSIGNMENT
-    %% --------------------------------------------------------
-    rect rgb(40, 30, 60)
-        note over Logistics,FastApiBackend: Phase 2: Logistics Fleet Assignment
-        Logistics->>FlutterApp: Views Logistics Dashboard
-        FlutterApp->>FastApiBackend: GET /v1/shipments/user/{uid}?role=LOGISTICS
-        FastApiBackend-->>FlutterApp: Returns PENDING shipments
-        Logistics->>FlutterApp: Assigns Driver ID to Shipment
-        FlutterApp->>FastApiBackend: PATCH /v1/shipments/{id}/assign
-        FastApiBackend-->>FlutterApp: Status Updated (Status: ASSIGNED)
+    rect rgb(30, 15, 50)
+        note over Logistics,DB: Phase 2 — Logistics Assigns Fleet
+        Logistics->>App: Views Logistics Dashboard
+        App->>API: GET /v1/shipments?role=LOGISTICS
+        API-->>App: Returns PENDING shipments
+        Logistics->>App: Assigns Driver to Shipment
+        App->>API: PATCH /v1/shipments/{id}/assign
+        API->>DB: Update (Status: ASSIGNED)
     end
 
-    %% --------------------------------------------------------
-    %% PHASE 3: DELIVERY - LIVE MONITORING & DRIVING
-    %% --------------------------------------------------------
-    rect rgb(30, 50, 40)
-        note over Delivery,GeminiAI: Phase 3: Delivery Live Ride & Rerouting
-        Delivery->>FlutterApp: Opens Active Ride Screen
-        Delivery->>FlutterApp: Taps "Start Ride"
-        FlutterApp->>FastApiBackend: PATCH /v1/shipments/{id}/status (Status: DISPATCHED)
-        
+    rect rgb(15, 40, 25)
+        note over Driver,Gemini: Phase 3 — Live Ride with AI Monitoring
+        Driver->>App: Starts Ride
+        App->>API: PATCH status → DISPATCHED
         loop Every 5 Minutes
-            FlutterApp->>FastApiBackend: PATCH /v1/shipments/{id}/location (Live GPS Ping)
-            FastApiBackend->>FastApiBackend: Updates tracking database
-            
-            FlutterApp->>FastApiBackend: POST /v1/ride/monitor
-            FastApiBackend->>GeminiAI: Scan path ahead for live roadblocks/storms
+            App->>API: POST /v1/ride/monitor (GPS ping)
+            API->>Gemini: Scan route ahead for hazards
             alt Path Clear
-                GeminiAI-->>FastApiBackend: Severity 0.0
-                FastApiBackend-->>FlutterApp: "Path looks clear."
+                Gemini-->>API: Severity 0.0
+                API-->>App: "Path looks clear 🟢"
             else Hazard Detected
-                GeminiAI-->>FastApiBackend: Severity 0.8 (Accident ahead)
-                FastApiBackend-->>FlutterApp: "REROUTE_SUGGESTED!"
-                FlutterApp->>Delivery: Displays Warning Overlay & Alternate Route
+                Gemini-->>API: Severity 0.85 — Accident ahead
+                API-->>App: REROUTE_SUGGESTED 🔴
+                App->>Maps: Compute alternate via avoid_waypoints
+                Maps-->>App: Optimized alternate route
+                App->>Driver: Display reroute overlay + AI explanation
             end
         end
-        Delivery->>FlutterApp: Arrives at destination, taps "Complete"
-        FlutterApp->>FastApiBackend: PATCH status to DELIVERED
+        Driver->>App: Arrives & taps Complete
+        App->>API: PATCH status → DELIVERED
     end
 
-    %% --------------------------------------------------------
-    %% PHASE 4: CONSUMER - LIVE TRACKING & EXPLANATIONS
-    %% --------------------------------------------------------
-    rect rgb(60, 40, 30)
-        note over Consumer,GeminiAI: Phase 4: Consumer Live Tracking
-        Consumer->>FlutterApp: Enters Tracking ID
-        FlutterApp->>FastApiBackend: GET /v1/shipments/{id}
-        FastApiBackend-->>FlutterApp: Returns status, live location, and integrity score
-        
-        Consumer->>FlutterApp: Taps "Why is this delayed?" (Explainable AI)
-        FlutterApp->>FastApiBackend: GET /v1/shipments/{id}/risk-details
-        FastApiBackend->>GeminiAI: Request detailed breakdown of risk factors
-        GeminiAI-->>FastApiBackend: "Rain causing 15 min delay"
-        FastApiBackend-->>FlutterApp: Displays AI Risk Explanation to Consumer
+    rect rgb(50, 30, 15)
+        note over Consumer,Gemini: Phase 4 — Consumer Live Tracking
+        Consumer->>App: Enters Tracking ID
+        App->>API: GET /v1/shipments/{id}
+        API->>DB: Fetch live location + risk score
+        DB-->>App: Status, GPS coords, ETA
+        Consumer->>App: Taps "Why is this delayed?"
+        App->>API: GET /v1/shipments/{id}/risk-details
+        API->>Gemini: Generate plain-language explanation
+        Gemini-->>API: "Rain causing 15-min delay on NH-48"
+        API-->>App: Display AI explanation to Consumer
     end
-```
-
-### 5. UI Wireframe & Mock Flow
-Logical layout of the Omnichannel Flutter portals.
-
-```mermaid
-%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "primaryBorderColor": "#334155", "lineColor": "#475569"}}}%%
-block-beta
-    columns 4
-    
-    block:Auth:4
-        Title("🔒 Unified Authentication Gate")
-        Desc("Role-Based Access Control (Supplier, Logistics, Driver, Consumer)")
-    end
-
-    space:4
-
-    block:Supplier:1
-        S_Title("🏭 Supplier Portal")
-        S_Btn1("➕ New Shipment")
-        S_Btn2("⚖️ Compare Modes")
-        S_Btn3("📊 Cost Analytics")
-    end
-
-    block:Logistics:1
-        L_Title("🏢 Logistics Admin")
-        L_Btn1("🗺️ Fleet Heatmap")
-        L_Btn2("🚦 Active Alerts")
-        L_Btn3("👨‍✈️ Driver Assignment")
-    end
-
-    block:Driver:1
-        D_Title("🚚 Driver App")
-        D_Btn1("📍 Live Navigation")
-        D_Btn2("🚨 AI Reroute Prompts")
-        D_Btn3("🚧 Report Incident")
-    end
-
-    block:Consumer:1
-        C_Title("👤 Consumer App")
-        C_Btn1("📦 Live Tracking")
-        C_Btn2("⏱️ Dynamic ETA")
-        C_Btn3("💬 Secure Chat")
-    end
-    
-    style Auth fill:#0F172A,stroke:#38BDF8,stroke-width:2px,color:#F8FAFC
-    style Supplier fill:#0F172A,stroke:#10B981,stroke-width:2px,color:#F8FAFC
-    style Logistics fill:#0F172A,stroke:#F43F5E,stroke-width:2px,color:#F8FAFC
-    style Driver fill:#0F172A,stroke:#F59E0B,stroke-width:2px,color:#F8FAFC
-    style Consumer fill:#0F172A,stroke:#A855F7,stroke-width:2px,color:#F8FAFC
 ```
 
 ---
 
 ## 🌟 Key Features
 
-*   **Preemptive Disruption Detection:** Detects and mitigates bottlenecks 15-30 minutes *before* the shipment reaches the affected zone.
-*   **Explainable AI Transparency:** Users aren't blindly rerouted. Gemini generates natural language explanations: *"Multi-vehicle accident detected 22km ahead. Rerouting via alternate highway to prevent a 45-min delay."*
-*   **Intelligent Mode Switching:** If a truck breaks down, Garuda automatically calculates the cost/time/carbon impact of transferring cargo to the nearest rail terminal.
-*   **Geofencing & Demand Surge:** AI predicts regional demand surges (festivals, weather events) and alerts fleet managers to preposition assets.
-*   **Driver Fatigue Monitoring:** Analyzes drive hours, time-of-day, and distances to mandate breaks, ensuring regulatory compliance and safety.
+### 🧠 Preemptive Disruption Detection
+Our Agentic RAG engine runs a continuous 5-minute monitoring cycle per active shipment, fusing historical delay data (BigQuery + Vertex AI) with live intelligence (Google Programmable Search). Gemini 2.5 Pro synthesizes these streams to compute a structured **Risk Score (0–100)** and triggers rerouting **15–30 minutes before** the shipment reaches the hazard zone — preventing cascades before they begin.
+
+### 💬 Explainable AI (XAI) Transparency
+Stakeholders are never blindly redirected. Gemini generates natural-language explanations for every action:
+> *"Multi-vehicle accident detected 22km ahead on NH-48. Rerouting via SH-4 saves an estimated 45 minutes and avoids cascade delay."*
+
+### ⚖️ Intelligent Mode Switching
+If a truck is blocked, Garuda instantly calculates the **cost / time / carbon trade-off** of switching cargo to the nearest rail terminal or air freight hub, providing logistics managers a data-driven decision matrix.
+
+### 📍 Real-Time Fleet Visibility
+Live GPS pings every 5 minutes flow through FastAPI into **Cloud Firestore**, which pushes location updates via SSE/WebSocket to the consumer's live tracking map with sub-second latency.
+
+### 🏎️ Last-Mile TSP Optimization
+Garuda solves the **Travelling Salesman Problem** for multi-stop delivery routes, minimizing total distance and ensuring optimized drop-off sequencing for urban last-mile drivers.
+
+### 🚧 Driver Fatigue & Incident Monitoring
+Garuda analyzes drive hours, time-of-day, and distance thresholds to flag fatigue risks and mandate regulatory breaks, with drivers able to log on-road incidents directly from the app.
+
+### 🌍 Demand Surge Geofencing
+AI predicts regional demand spikes driven by festivals, weather events, and market trends, alerting fleet managers to **preposition assets** before surge windows open.
+
+---
+
+## ☁️ Google Ecosystem Integration
+
+Project Garuda is deeply embedded in the **Google for Developers** ecosystem, leveraging premier cloud infrastructure, AI, and mapping services.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "lineColor": "#64748B"}}}%%
+mindmap
+  root((🦅 Project Garuda))
+    Google AI
+      Gemini 2.5 Pro
+        Risk Score Reasoning
+        XAI Explanations
+        Disruption Classification
+      Vertex AI
+        Demand Surge Prediction
+        Congestion Pattern Modeling
+    Google Cloud
+      Cloud Run
+        FastAPI Backend
+        Serverless Auto-scaling
+      BigQuery
+        Historical Delay Warehouse
+        Bottleneck Analytics
+    Google Maps Platform
+      Routes API
+        Waypoint Extraction
+        avoid_waypoints Rerouting
+        TSP Optimization
+      Places API
+        Origin/Dest Autocomplete
+    Firebase Platform
+      Authentication
+        Role-Based Access Control
+        4 Stakeholder Portals
+      Cloud Firestore
+        Real-time GPS Sync
+        SSE Live Tracking
+    Search
+      Programmable Search API
+        Live News Scraping
+        Weather Alert Retrieval
+```
+
+| Google Service | Role in Garuda |
+|:---|:---|
+| **Gemini 2.5 Pro** | Core AI reasoning — risk scoring, XAI explanations, disruption severity parsing |
+| **Vertex AI** | Predictive modeling — demand surges, congestion trends |
+| **Google Routes API** | Waypoint extraction, alternate path computation, `avoid_waypoints` rerouting, TSP |
+| **Google Places API** | Origin/destination autocomplete in the shipment creation flow |
+| **BigQuery** | Historical delay pattern warehouse for ML training and bottleneck analysis |
+| **Google Cloud Run** | Serverless, auto-scaling FastAPI backend — handles traffic spikes during crises |
+| **Firebase Auth** | Secure role-based login across all 4 user portals |
+| **Cloud Firestore** | Real-time GPS synchronization; SSE streams for live consumer tracking map |
+| **Programmable Search API** | RAG retrieval layer — live scraping of news, weather, and regulatory alerts |
 
 ---
 
 ## 🌱 Sustainable Impact (UN SDGs)
 
-Aligned with the Google Solution Challenge goals, Project Garuda directly addresses:
-*   **SDG 9 (Industry, Innovation & Infrastructure):** Upgrades legacy logistics into resilient, intelligent networks capable of handling extreme volatility.
-*   **SDG 11 (Sustainable Cities & Communities):** Reduces urban congestion by actively routing commercial fleets away from traffic hotspots.
-*   **SDG 13 (Climate Action):** Significantly reduces carbon emissions. By eliminating idle time in undetected traffic blocks, models show up to a **13.6% reduction in fuel consumption**.
+Project Garuda directly addresses three UN Sustainable Development Goals, aligned with the Google Solution Challenge's mission.
+
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "lineColor": "#64748B"}}}%%
+graph LR
+    G[🦅 Project Garuda] --> SDG9
+    G --> SDG11
+    G --> SDG13
+
+    SDG9["⚙️ SDG 9\nIndustry, Innovation\n& Infrastructure\n\nUpgrades legacy logistics\ninto resilient AI-driven networks"]
+    SDG11["🏙️ SDG 11\nSustainable Cities\n& Communities\n\nReduces urban congestion\nby rerouting commercial fleets"]
+    SDG13["🌍 SDG 13\nClimate Action\n\nUp to 13.6% reduction\nin fuel consumption\nby eliminating idle time"]
+
+    style SDG9 fill:#0F172A,stroke:#34A853,stroke-width:2px,color:#F8FAFC
+    style SDG11 fill:#0F172A,stroke:#4285F4,stroke-width:2px,color:#F8FAFC
+    style SDG13 fill:#0F172A,stroke:#EA4335,stroke-width:2px,color:#F8FAFC
+    style G fill:#0F172A,stroke:#FBBC04,stroke-width:2px,color:#F8FAFC
+```
 
 ---
 
-## 🛠️ The Google Ecosystem Advantage
+## 🛠️ Tech Stack
 
-Project Garuda is deeply integrated with Google's premier developer tools and cloud infrastructure to ensure global scalability, real-time synchronization, and state-of-the-art AI reasoning.
-
-### 🧠 Google AI & Machine Learning
-*   **Gemini 2.5 Flash:** Acts as the core reasoning engine. It parses unstructured text (news, weather alerts) to understand context, classify disruption severity, and generate human-readable explanations for reroutes.
-*   **Google Vertex AI:** Powers predictive modeling for regional demand surges, localized congestion trends, and predictive delay analysis.
-
-### ☁️ Google Cloud Infrastructure
-*   **Google Cloud Run:** Hosts the highly-concurrent FastAPI backend in a serverless, automatically scaling environment to handle unpredictable traffic spikes during supply chain crises.
-*   **Google BigQuery:** Provides a massively scalable data warehouse for storing and analyzing years of historical transit and delay patterns to identify recurring bottlenecks.
-
-### 🗺️ Google Maps Platform
-*   **Google Routes API:** Delivers precise navigation, multi-stop optimization (TSP), and alternate path generation using the crucial `avoid_waypoints` parameter to seamlessly route around newly detected hazards.
-
-### 🔥 Firebase Platform
-*   **Firebase Authentication:** Provides robust, secure, and seamless login experiences across all four user portals.
-*   **Cloud Firestore:** Enables blazing-fast, real-time database synchronization. When a truck pings a location update, Firestore instantly pushes that data to the consumer's live tracking map via WebSockets/SSE.
-
-### 📱 Frontend & Presentation
-*   **Flutter (Dart):** Powers the unified omnichannel frontend. A single codebase deploys native-feeling applications for Suppliers, Logistics Admins, Drivers, and Consumers across iOS, Android, and Web.
-*   **Google Slides:** (Used for the pitch presentation and architectural mockups presented to stakeholders).
-
-### 🔍 Search & Retrieval
-*   **Google Programmable Search API:** The live retrieval mechanism for our Agentic RAG pipeline, actively scraping local news, weather alerts, and regulatory changes relevant to the route's current waypoints.
+| Layer | Technology |
+|:---|:---|
+| **Mobile / Frontend** | Flutter (Dart) — iOS, Android, Web |
+| **Backend API** | Python FastAPI — deployed on Google Cloud Run |
+| **AI Reasoning** | Gemini 2.5 Pro (via Vertex AI SDK) |
+| **Predictive ML** | Google Vertex AI + BigQuery ML |
+| **Navigation** | Google Routes API + Google Places API |
+| **Live Retrieval (RAG)** | Google Programmable Search Engine API |
+| **Database** | Google Cloud Firestore (real-time) |
+| **Authentication** | Firebase Authentication |
+| **CI/CD** | GitHub Actions (automated APK build) |
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-*   Python 3.11+
-*   Flutter SDK 3.11+
-*   Google Cloud Project (Billing Enabled) with API Keys for Maps, Search, and Vertex AI.
-*   Firebase Project setup.
+- Python 3.11+
+- Flutter SDK 3.11+
+- Google Cloud Project (Billing Enabled)
+- API Keys: Google Maps, Programmable Search, Vertex AI
+- Firebase Project configured
 
 ### Backend Setup
+
 ```bash
 # 1. Navigate to the backend directory
 cd backend-fastapi
 
-# 2. Create and activate a virtual environment
+# 2. Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+source venv/bin/activate        # Windows: venv\Scripts\activate
 
 # 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure environment variables (.env)
-# PROJECT_ID=your-gcp-id
-# GOOGLE_MAPS_KEY=your-maps-key
-# FIREBASE_WEB_API_KEY=your-firebase-key
+# 4. Configure environment variables
+cp .env.example .env
+# Fill in: PROJECT_ID, GOOGLE_MAPS_KEY, FIREBASE_WEB_API_KEY, GEMINI_API_KEY
 
-# 5. Run the orchestrator
+# 5. Run the server
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
-*API documentation available interactively at `https://garuda-backend-437904093333.asia-south1.run.app/scalar`*
 
-### Frontend Setup
+> 📡 **Interactive API Docs (Live):** [https://garuda-backend-437904093333.asia-south1.run.app/scalar](https://garuda-backend-437904093333.asia-south1.run.app/scalar)
+
+### Flutter App Setup
+
 ```bash
 # 1. Navigate to the Flutter directory
 cd flutter_app
 
-# 2. Fetch dependencies
+# 2. Install dependencies
 flutter pub get
 
 # 3. Run the application
 flutter run
+
+# Or download the pre-built APK directly:
+# https://github.com/TechNoSena/Garuda/releases/download/beta/Garurda-beta-v1.0.0.apk
 ```
 
 ---
 
-## 📜 License
+## 🔑 Demo Credentials
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Test the full platform end-to-end using these pre-configured demo accounts. Each account unlocks a different role-specific portal.
+
+| Role | Portal | Email | Password |
+|:---|:---|:---|:---|
+| 🏭 **Supplier** | Create shipments, pre-flight risk checks, mode comparison | `demos@gmail.com` | `demo1234` |
+| 🏢 **Logistics Partner** | Fleet management, driver assignment, active alerts heatmap | `demolp@gmail.com` | `demo1234` |
+| 🚚 **Delivery Driver** | Live navigation, AI reroute prompts, incident reporting | `demodm@gmail.com` | `demo1234` |
+| 👤 **Consumer** | Live shipment tracking, dynamic ETA, AI delay explanations | `democ@gmail.com` | `demo1234` |
+
+> **Tip:** Use the Supplier account to create a shipment, then log in as Logistics Partner to assign the Driver account, and finally track it as the Consumer — for the full end-to-end experience.
+
+---
+
+## 📄 License
+
+This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
 
 <div align="center">
-  <i>Built with ❤️ and 🧠 by Team DietCoke for the Google Solution Challenge 2026.</i>
+
+  <img src="flutter_app/garuda_logo.png" alt="Garuda" width="60"/>
+
+  **Project Garuda** · Google Solution Challenge 2026
+
+  *Built with ❤️ and ☁️ by **Team DietCoke***
+
+  [![Build Flutter APK](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml/badge.svg?branch=master)](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml)
+
 </div>
