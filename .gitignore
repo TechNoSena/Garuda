@@ -1,26 +1,56 @@
-# Python
+# ─── Python ───────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 venv/
 .venv/
 env/
-.env
 .pytest_cache/
+*.egg-info/
+dist/
+build/
 
-# Firebase & Secrets (CRITICAL)
+# ─── Firebase & Secrets (CRITICAL) ───────
 serviceAccountKey.json
 .env
+.env.*
+!.env.example
 *.key
 *.pem
+*.p12
+*.json.bak
 
-# IDEs
+# ─── Flutter / Dart ──────────────────────
+flutter_app/build/
+flutter_app/.dart_tool/
+flutter_app/.packages
+flutter_app/.flutter-plugins
+flutter_app/.flutter-plugins-dependencies
+*.apk
+*.aab
+*.ipa
+
+# ─── IDEs ────────────────────────────────
 .vscode/
 .idea/
+*.iml
+*.swp
+*.swo
+*~
 
-# OS
+# ─── OS ──────────────────────────────────
 .DS_Store
 Thumbs.db
+Desktop.ini
+ehthumbs.db
 
-# Logs
+# ─── Logs & Crash Dumps ─────────────────
 *.log
+hs_err_pid*.log
+replay_pid*.log
+
+# ─── Miscellaneous ──────────────────────
+*.bak
+*.tmp
+*.orig
+scratch/

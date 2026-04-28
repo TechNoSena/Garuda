@@ -1,0 +1,40 @@
+version: 2
+updates:
+  # Python (pip) — Backend FastAPI dependencies
+  - package-ecosystem: "pip"
+    directory: "/backend-fastapi"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps):"
+
+  # Flutter (pub) — Frontend dependencies
+  - package-ecosystem: "pub"
+    directory: "/flutter_app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "flutter"
+    commit-message:
+      prefix: "chore(deps):"
+
+  # GitHub Actions — CI/CD workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci):"

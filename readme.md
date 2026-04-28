@@ -3,12 +3,15 @@
 
   # 🦅 Project Garuda
 
+  <img src="https://img.shields.io/badge/Google_Solution_Challenge-2026-FBBC04?style=for-the-badge&logo=google&logoColor=white" alt="Google Solution Challenge 2026"/>
+
   ### *Smart Supply Chains: Resilient Logistics & Dynamic Supply Chain Optimization*
 
   <p align="center">
     <a href="https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml">
       <img src="https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml/badge.svg?branch=master" alt="Build Flutter APK"/>
     </a>
+    <img src="https://img.shields.io/badge/Google_Products_Used-14-4285F4?style=flat-square&logo=google&logoColor=white" alt="14 Google Products"/>
     <img src="https://img.shields.io/badge/Google_Cloud-4285F4?style=flat-square&logo=google-cloud&logoColor=white" alt="Google Cloud"/>
     <img src="https://img.shields.io/badge/Gemini_2.5_Pro-EA4335?style=flat-square&logo=googlegemini&logoColor=white" alt="Gemini AI"/>
     <img src="https://img.shields.io/badge/Flutter-02569B?style=flat-square&logo=flutter&logoColor=white" alt="Flutter"/>
@@ -25,6 +28,8 @@
     <a href="https://youtu.be/Alz17zhRqGw"><strong>🎬 Demo Video</strong></a>
     &nbsp;·&nbsp;
     <a href="https://youtu.be/vWFgSMFtTHY"><strong>🖼️ Prototype Walkthrough</strong></a>
+    &nbsp;·&nbsp;
+    <a href="https://storage.googleapis.com/vision-hack2skill-production/innovator/USER00334517/1777386918584-Garuda1compressed.pdf"><strong>📊 Pitch Deck (PDF)</strong></a>
   </p>
 
   <br/>
@@ -53,7 +58,10 @@
 12. [Tech Stack](#-tech-stack)
 13. [Getting Started](#-getting-started)
 14. [Demo Credentials](#-demo-credentials)
-15. [License](#-license)
+15. [Contributing](#-contributing)
+16. [Security](#-security)
+17. [Changelog](#-changelog)
+18. [License](#-license)
 
 ---
 
@@ -85,6 +93,19 @@ The platform serves **four distinct stakeholder roles** (Supplier, Logistics Par
 | 👥 Stakeholder Portals | **4** unified in one Flutter app |
 | ☁️ Deployment | Google Cloud Run (serverless, auto-scaling) |
 
+### ⚡ How It Works — In 3 Steps
+
+```
+┌─────────────────────┐     ┌─────────────────────────┐     ┌──────────────────────────┐
+│  1️⃣  SENSE            │     │  2️⃣  THINK               │     │  3️⃣  ACT                  │
+│                     │     │                         │     │                          │
+│  Continuously fuse  │────▶│  Gemini 2.5 Pro scores  │────▶│  Auto-inject             │
+│  live news, weather │     │  risk (0-100) every     │     │  avoid_waypoints via     │
+│  & historical data  │     │  5 minutes per shipment │     │  Routes API + push       │
+│  via RAG pipeline   │     │  using Agentic RAG      │     │  AI explanation to all   │
+└─────────────────────┘     └─────────────────────────┘     └──────────────────────────┘
+```
+
 ---
 
 ## 🚀 Live Demo & Downloads
@@ -95,6 +116,7 @@ The platform serves **four distinct stakeholder roles** (Supplier, Logistics Par
 | 📡 **Live Backend API Docs** | [Scalar Interactive Docs](https://garuda-backend-437904093333.asia-south1.run.app/scalar) |
 | 🎬 **Full Demo Video** | [Watch on YouTube](https://youtu.be/Alz17zhRqGw) |
 | 🖼️ **Prototype Walkthrough** | [Watch on YouTube](https://youtu.be/vWFgSMFtTHY) |
+| 📊 **Pitch Deck (PDF)** | [View Presentation](https://storage.googleapis.com/vision-hack2skill-production/innovator/USER00334517/1777386918584-Garuda1compressed.pdf) |
 | 🏗️ **CI/CD Build Pipeline** | [GitHub Actions](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml) |
 
 ---
@@ -326,6 +348,20 @@ sequenceDiagram
 
 ---
 
+## 🆚 Why Garuda? — Legacy vs. Garuda
+
+| Aspect | ❌ Traditional Logistics | ✅ Project Garuda |
+|:---|:---|:---|
+| **Disruption Detection** | Reactive — discovered after delays hit | Preemptive — flagged 15-30 min before impact |
+| **Rerouting** | Manual dispatcher calls | Automatic via `avoid_waypoints` API |
+| **Data Sources** | GPS-only | GPS + News + Weather + Historical patterns (RAG) |
+| **Explainability** | None — "route changed" | Full AI explanation: *"Accident 22km ahead..."* |
+| **Transport Modes** | Single-mode silos | Omni-modal with intelligent mode switching |
+| **Consumer Visibility** | Basic status updates | Live map + dynamic ETA + delay reasoning |
+| **Scalability** | On-prem, fixed capacity | Serverless Cloud Run, auto-scaling |
+
+---
+
 ## 🌟 Key Features
 
 ### 🧠 Preemptive Disruption Detection
@@ -354,13 +390,13 @@ AI predicts regional demand spikes driven by festivals, weather events, and mark
 
 ## ☁️ Google Ecosystem Integration
 
-Project Garuda is deeply embedded in the **Google for Developers** ecosystem, leveraging premier cloud infrastructure, AI, and mapping services.
+Project Garuda is deeply embedded in the **Google for Developers** ecosystem, leveraging **14 Google products** across backend, frontend, testing, and research.
 
 ```mermaid
 %%{init: {"theme": "base", "themeVariables": {"primaryColor": "#1E293B", "primaryTextColor": "#F8FAFC", "lineColor": "#64748B"}}}%%
 mindmap
   root((🦅 Project Garuda))
-    Google AI
+    🧠 Google AI
       Gemini 2.5 Pro
         Risk Score Reasoning
         XAI Explanations
@@ -368,44 +404,81 @@ mindmap
       Vertex AI
         Demand Surge Prediction
         Congestion Pattern Modeling
-    Google Cloud
+    ☁️ Google Cloud
       Cloud Run
         FastAPI Backend
         Serverless Auto-scaling
       BigQuery
         Historical Delay Warehouse
         Bottleneck Analytics
-    Google Maps Platform
+    🗺️ Google Maps Platform
       Routes API
         Waypoint Extraction
         avoid_waypoints Rerouting
         TSP Optimization
       Places API
         Origin/Dest Autocomplete
-    Firebase Platform
+    🔥 Firebase Platform
       Authentication
         Role-Based Access Control
         4 Stakeholder Portals
       Cloud Firestore
         Real-time GPS Sync
         SSE Live Tracking
-    Search
+    🔍 Search
       Programmable Search API
         Live News Scraping
         Weather Alert Retrieval
+    📱 Frontend & Presentation
+      Flutter
+        Unified Cross-Platform App
+      Google Slides
+        Pitch Deck Creation
+    🧪 Testing
+      Antigravity
+        Agentic AI Testing
+      Gemini 3.1 Pro
+        Code Review & Debugging
+    🔬 Research
+      Google AI Studio
+        Prompt Engineering
+      Gemma-4-31b-it
+        Open Model Experimentation
 ```
+
+### 💻 Backend Services
 
 | Google Service | Role in Garuda |
 |:---|:---|
-| **Gemini 2.5 Pro** | Core AI reasoning — risk scoring, XAI explanations, disruption severity parsing |
-| **Vertex AI** | Predictive modeling — demand surges, congestion trends |
-| **Google Routes API** | Waypoint extraction, alternate path computation, `avoid_waypoints` rerouting, TSP |
-| **Google Places API** | Origin/destination autocomplete in the shipment creation flow |
-| **BigQuery** | Historical delay pattern warehouse for ML training and bottleneck analysis |
 | **Google Cloud Run** | Serverless, auto-scaling FastAPI backend — handles traffic spikes during crises |
-| **Firebase Auth** | Secure role-based login across all 4 user portals |
+| **Gemini 2.5 Pro** | Core AI reasoning — risk scoring, XAI explanations, disruption severity parsing |
+| **Google Maps API (Routes)** | Waypoint extraction, alternate path computation, `avoid_waypoints` rerouting, TSP |
+| **Vertex AI** | Predictive modeling — demand surges, congestion trends |
+| **BigQuery** | Historical delay pattern warehouse for ML training and bottleneck analysis |
+| **Firebase Authentication** | Secure role-based login across all 4 user portals |
 | **Cloud Firestore** | Real-time GPS synchronization; SSE streams for live consumer tracking map |
 | **Programmable Search API** | RAG retrieval layer — live scraping of news, weather, and regulatory alerts |
+
+### 📱 Frontend & Presentation
+
+| Google Product | Role in Garuda |
+|:---|:---|
+| **Flutter (Dart)** | Unified omnichannel frontend — iOS, Android, Web from a single codebase |
+| **Google Slides** | Pitch deck creation and stakeholder presentations |
+
+### 🧪 Testing & Quality
+
+| Google Product | Role in Garuda |
+|:---|:---|
+| **Antigravity** | Agentic AI-powered end-to-end testing and code validation |
+| **Gemini 3.1 Pro** | Advanced code review, debugging, and integration test generation |
+
+### 🔬 Research & Experimentation
+
+| Google Product | Role in Garuda |
+|:---|:---|
+| **Google AI Studio** | Rapid prompt engineering and Gemini model experimentation |
+| **Gemma-4-31b-it** | Open-weight model used for local research and architecture evaluation |
 
 ---
 
@@ -440,11 +513,69 @@ graph LR
 | **Backend API** | Python FastAPI — deployed on Google Cloud Run |
 | **AI Reasoning** | Gemini 2.5 Pro (via Vertex AI SDK) |
 | **Predictive ML** | Google Vertex AI + BigQuery ML |
-| **Navigation** | Google Routes API + Google Places API |
+| **Navigation** | Google Routes API + Google Maps API |
 | **Live Retrieval (RAG)** | Google Programmable Search Engine API |
 | **Database** | Google Cloud Firestore (real-time) |
 | **Authentication** | Firebase Authentication |
+| **Testing** | Antigravity (Agentic AI) + Gemini 3.1 Pro |
+| **Research** | Google AI Studio + Gemma-4-31b-it |
+| **Presentation** | Google Slides |
 | **CI/CD** | GitHub Actions (automated APK build) |
+
+---
+
+## 📁 Project Structure
+
+```
+Garuda/
+├── 📱 flutter_app/               # Flutter multi-portal application
+│   ├── README.md                 # 📖 Detailed Flutter docs
+│   ├── lib/
+│   │   ├── core/                 # Shared widgets, providers, models, theme
+│   │   │   ├── models/           # Shipment, User data models
+│   │   │   ├── providers/        # State management (Riverpod)
+│   │   │   ├── services/         # API client, auth service
+│   │   │   └── widgets/          # FunkyBox design system, LiveMapWidget
+│   │   ├── features/             # Role-specific screens
+│   │   │   ├── auth/             # Login, Register
+│   │   │   ├── supplier/         # Create shipment, pre-check, analytics
+│   │   │   ├── logistics/        # Fleet dashboard, driver assignment
+│   │   │   ├── delivery/         # Active ride, AI reroute overlay
+│   │   │   ├── consumer/         # Live tracking, delay explanations
+│   │   │   └── shared/           # Chat, settings
+│   │   ├── app.dart              # App shell & routing
+│   │   └── main.dart             # Entry point
+│   └── garuda_logo.png           # App branding asset
+│
+├── ⚙️ backend-fastapi/            # FastAPI orchestration engine
+│   ├── README.md                 # 📖 Detailed API docs
+│   ├── .env.example              # 🔑 Required API keys template
+│   ├── app/
+│   │   ├── routes/               # API endpoint handlers
+│   │   ├── services/             # Gemini, Firebase, Maps, Search services
+│   │   └── models/               # Pydantic schemas
+│   ├── main.py                   # FastAPI entry point
+│   └── requirements.txt          # Python dependencies
+│
+├── 🔧 .github/
+│   ├── workflows/
+│   │   ├── build-apk.yml         # CI/CD: Automated APK builds
+│   │   └── stale.yml             # Auto-close stale issues/PRs
+│   ├── dependabot.yml            # Auto dependency updates
+│   ├── ISSUE_TEMPLATE/           # Bug report & feature request templates
+│   └── PULL_REQUEST_TEMPLATE.md  # PR checklist template
+│
+├── README.md                     # You are here
+├── CONTRIBUTING.md               # Contribution guidelines
+├── CODE_OF_CONDUCT.md            # Community standards
+├── SECURITY.md                   # Vulnerability reporting policy
+├── CHANGELOG.md                  # Version history
+└── LICENSE                       # MIT License
+```
+
+> 📖 **Detailed documentation available inside each directory:**
+> - **[Flutter App Docs](flutter_app/README.md)** — Role portals, design system, architecture, API integration
+> - **[Backend API Docs](backend-fastapi/README.md)** — All endpoints, services, deployment guide
 
 ---
 
@@ -513,9 +644,55 @@ Test the full platform end-to-end using these pre-configured demo accounts. Each
 
 ---
 
+## 🗺️ Roadmap
+
+Upcoming features planned for future releases:
+
+- [ ] 🛰️ **Satellite Weather Overlay** — Real-time weather radar layer on driver maps
+- [ ] 📊 **Predictive ETA Model** — ML-based ETA refinement using historical corridor data
+- [ ] 🔔 **Consumer Push Notifications** — Firebase Cloud Messaging for delivery alerts
+- [ ] 🌐 **Multi-language Support** — Hindi, Tamil, Bengali, and more regional languages
+- [ ] 🏗️ **Warehouse Integration** — Connect to warehouse management systems for end-to-end visibility
+- [ ] 📱 **Wearable Alerts** — Driver fatigue warnings on smartwatches via Wear OS
+
+---
+
+## 🤝 Contributing
+
+We welcome contributions from the community! Whether it's bug reports, feature requests, documentation improvements, or code — every contribution helps.
+
+- 📖 Read our **[Contributing Guidelines](CONTRIBUTING.md)** to get started
+- 📜 Please review our **[Code of Conduct](CODE_OF_CONDUCT.md)** before participating
+
+---
+
+## 🔒 Security
+
+Found a vulnerability? Please report it responsibly — **do not** open a public issue.
+
+- 🛡️ Read our **[Security Policy](SECURITY.md)** for reporting guidelines and response timelines
+
+---
+
+## 📝 Changelog
+
+All notable changes are documented in the **[Changelog](CHANGELOG.md)**, following [Keep a Changelog](https://keepachangelog.com/) and [Semantic Versioning](https://semver.org/).
+
+---
+
 ## 📄 License
 
 This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgements
+
+- **Google for Developers** — For the Solution Challenge platform and mentorship
+- **Google Cloud** — Cloud Run, BigQuery, Vertex AI, and Maps Platform credits
+- **Google DeepMind** — Gemini 2.5 Pro powering our AI reasoning engine
+- **Firebase** — Real-time infrastructure that makes live tracking possible
+- **Flutter Community** — For the incredible cross-platform framework and ecosystem
 
 ---
 
@@ -526,6 +703,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
   **Project Garuda** · Google Solution Challenge 2026
 
   *Built with ❤️ and ☁️ by **Team DietCoke***
+
+  <a href="CONTRIBUTING.md">Contributing</a> · <a href="CODE_OF_CONDUCT.md">Code of Conduct</a> · <a href="SECURITY.md">Security</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="LICENSE">License</a>
 
   [![Build Flutter APK](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml/badge.svg?branch=master)](https://github.com/TechNoSena/Garuda/actions/workflows/build-apk.yml)
 
